@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles, Tag, Filter, Search } from 'lucide-react';
+import { ArrowRight, Sparkles, Filter, Search } from 'lucide-react';
+
+const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 
 export default function UserCatalog() {
   const [products, setProducts] = useState([]);
@@ -14,7 +16,7 @@ export default function UserCatalog() {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/products');
+      const response = await fetch(`${LIVE_BACKEND_URL}/api/products`);
       const data = await response.json();
       setProducts(data);
       setLoading(false);
@@ -36,7 +38,6 @@ export default function UserCatalog() {
 
   return (
     <div className="min-h-screen bg-[#faf6f5]">
-      {/* Hero Banner */}
       <section className="bg-gradient-to-b from-[#f5ebe8] to-[#faf6f5] py-16 px-4 sm:px-6 lg:px-8 border-b border-[#b57c70]/10 text-center">
         <div className="max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#b57c70]/15 text-[#b57c70] text-xs font-semibold uppercase tracking-widest">
@@ -49,7 +50,6 @@ export default function UserCatalog() {
             Bespoke Sparkbooks, Premium Gift Albums, Photo Frames & Small Keychains
           </p>
 
-          {/* CATALOG SEARCH BAR */}
           <div className="max-w-md mx-auto pt-4">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-[#2b2524]/40" />
@@ -73,7 +73,6 @@ export default function UserCatalog() {
         </div>
       </section>
 
-      {/* Main Catalog Grid */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-3 border-b border-[#b57c70]/20">
           <div className="flex items-center gap-2">
@@ -103,6 +102,7 @@ export default function UserCatalog() {
         {loading ? (
           <div className="py-20 text-center">
             <div className="inline-block w-8 h-8 border-4 border-[#b57c70] border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-xs text-[#2b2524]/60 mt-2 font-medium">Connecting to Studio Backend...</p>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-xl border border-dashed border-[#b57c70]/30 p-8">
@@ -115,7 +115,7 @@ export default function UserCatalog() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {filteredProducts.map((product) => {
               const sellingPrice = product.basePrice;
-              const originalMRP = sellingPrice * 2; // Discounted pricing format
+              const originalMRP = sellingPrice * 2;
 
               return (
                 <div
@@ -145,7 +145,6 @@ export default function UserCatalog() {
                         {product.description}
                       </p>
 
-                      {/* Pricing Display (Crossed out MRP + Discounted Price) */}
                       <div className="mt-3 flex items-baseline gap-2">
                         <span className="text-base font-bold text-[#b57c70]">₹{sellingPrice}.00</span>
                         <span className="text-xs text-rose-500 line-through opacity-70">₹{originalMRP}.00</span>

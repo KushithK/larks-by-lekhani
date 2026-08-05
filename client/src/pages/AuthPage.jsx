@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock, Mail, Sparkles, ArrowRight, UserPlus, CheckCircle2 } from 'lucide-react';
 
+const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
+
 export default function AuthPage({ onLoginSuccess }) {
   const navigate = useNavigate();
-  const [authMode, setAuthMode] = useState('user-login'); // 'user-login' | 'user-register'
+  const [authMode, setAuthMode] = useState('user-login');
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Pop-up Success State
   const [showLoginSuccessPopup, setShowLoginSuccessPopup] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
 
@@ -18,38 +19,36 @@ export default function AuthPage({ onLoginSuccess }) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // 1. SIGN UP (REGISTER)
   const handleUserRegister = async (e) => {
     e.preventDefault();
     setErrorMsg(''); setSuccessMsg(''); setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/user/register', {
+      const res = await fetch(`${LIVE_BACKEND_URL}/api/auth/user/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: formData.name, email: formData.email, password: formData.password })
       });
       const data = await res.json();
       if (res.ok) {
-        setSuccessMsg('Account created successfully! You can now Sign In below.');
+        setSuccessMsg('Account created successfully! Please sign in below.');
         setAuthMode('user-login');
       } else {
         setErrorMsg(data.message || 'Registration failed.');
       }
     } catch (err) {
-      setErrorMsg('Server connection failed. Ensure backend is running.');
+      setErrorMsg('Server connecting... (Render free server wakes up in 20 seconds on first load)');
     } finally {
       setLoading(false);
     }
   };
 
-  // 2. SIGN IN (WITH POP-UP ALERT & DIRECT REDIRECT TO HOME PAGE)
   const handleUserLogin = async (e) => {
     e.preventDefault();
     setErrorMsg(''); setSuccessMsg(''); setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/user/login', {
+      const res = await fetch(`${LIVE_BACKEND_URL}/api/auth/user/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email, password: formData.password })
@@ -60,18 +59,17 @@ export default function AuthPage({ onLoginSuccess }) {
         localStorage.setItem('larks_user', JSON.stringify(data.user));
         
         setLoggedInUser(data.user);
-        setShowLoginSuccessPopup(true); // SHOW POPUP ALERT
+        setShowLoginSuccessPopup(true);
 
-        // Auto-redirect directly to Home Page after 1.2 seconds
         setTimeout(() => {
           onLoginSuccess(data.user);
           navigate('/');
         }, 1200);
       } else {
-        setErrorMsg(data.message || 'Invalid user email or password.');
+        setErrorMsg(data.message || 'Invalid email or password.');
       }
     } catch (err) {
-      setErrorMsg('Server connection failed.');
+      setErrorMsg('Server connecting... (Render free server wakes up in 20 seconds on first load)');
     } finally {
       setLoading(false);
     }
@@ -81,7 +79,6 @@ export default function AuthPage({ onLoginSuccess }) {
     <div className="min-h-screen bg-[#faf6f5] flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-2xl border border-[#b57c70]/20 shadow-xl overflow-hidden relative">
         
-        {/* Header */}
         <div className="bg-[#2b2524] text-[#faf6f5] p-8 text-center relative">
           <div className="w-12 h-12 bg-[#b57c70] text-white rounded-full flex items-center justify-center mx-auto mb-3 shadow">
             <Sparkles className="w-6 h-6" />
@@ -90,7 +87,6 @@ export default function AuthPage({ onLoginSuccess }) {
           <p className="text-xs text-[#faf6f5]/70 mt-1">Artisanal Custom Handcrafted Gift & Jewelry Studio</p>
         </div>
 
-        {/* Customer Mode Tabs */}
         <div className="flex border-b border-[#b57c70]/20 bg-[#faf6f5]">
           <button
             onClick={() => { setAuthMode('user-login'); setErrorMsg(''); }}
@@ -114,7 +110,6 @@ export default function AuthPage({ onLoginSuccess }) {
           {errorMsg && <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded border border-rose-200">{errorMsg}</div>}
           {successMsg && <div className="p-3 bg-emerald-50 text-emerald-700 text-xs rounded border border-emerald-200">{successMsg}</div>}
 
-          {/* USER LOGIN FORM */}
           {authMode === 'user-login' && (
             <form onSubmit={handleUserLogin} className="space-y-4 text-xs">
               <div>
@@ -152,13 +147,12 @@ export default function AuthPage({ onLoginSuccess }) {
                 disabled={loading}
                 className="w-full py-3 bg-[#b57c70] hover:bg-[#9e675b] text-white font-bold uppercase tracking-widest rounded transition-all flex items-center justify-center gap-2 shadow"
               >
-                <span>{loading ? 'Authenticating...' : 'Sign In to Store'}</span>
+                <span>{loading ? 'Connecting to Server...' : 'Sign In to Store'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
           )}
 
-          {/* USER REGISTER FORM */}
           {authMode === 'user-register' && (
             <form onSubmit={handleUserRegister} className="space-y-4 text-xs">
               <div>
@@ -220,7 +214,6 @@ export default function AuthPage({ onLoginSuccess }) {
 
       </div>
 
-      {/* SUCCESSFUL SIGN-IN POPUP MODAL */}
       {showLoginSuccessPopup && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-[#b57c70]/30 animate-in fade-in zoom-in">

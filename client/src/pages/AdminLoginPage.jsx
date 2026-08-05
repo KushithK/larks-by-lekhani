@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { ShieldCheck, KeyRound, Lock, Sparkles, ArrowRight } from 'lucide-react';
+import { ShieldCheck, KeyRound, ArrowRight } from 'lucide-react';
+
+const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 
 export default function AdminLoginPage({ onLoginSuccess }) {
   const [adminUsername, setAdminUsername] = useState('');
@@ -13,7 +15,7 @@ export default function AdminLoginPage({ onLoginSuccess }) {
     setLoading(true);
 
     try {
-      const res = await fetch('http://localhost:5000/api/auth/admin/login', {
+      const res = await fetch(`${LIVE_BACKEND_URL}/api/auth/admin/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: adminUsername, password: adminPassword })
@@ -27,7 +29,7 @@ export default function AdminLoginPage({ onLoginSuccess }) {
         setErrorMsg(data.message || 'Invalid admin username or password.');
       }
     } catch (err) {
-      setErrorMsg('Server connection error.');
+      setErrorMsg('Server connecting... (Render free server wakes up in 20 seconds on first load)');
     } finally {
       setLoading(false);
     }
@@ -92,7 +94,7 @@ export default function AdminLoginPage({ onLoginSuccess }) {
             disabled={loading}
             className="w-full py-3 bg-[#2b2524] hover:bg-[#423b3a] text-white font-bold uppercase tracking-widest rounded transition-all flex items-center justify-center gap-2 shadow"
           >
-            <span>{loading ? 'Authenticating...' : 'Unlock Admin Portal'}</span>
+            <span>{loading ? 'Connecting to Server...' : 'Unlock Admin Portal'}</span>
             <ArrowRight className="w-4 h-4 text-[#b57c70]" />
           </button>
         </form>

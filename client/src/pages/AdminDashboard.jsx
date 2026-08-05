@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
 
+const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
+
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('products');
   const [products, setProducts] = useState([]);
@@ -20,7 +22,7 @@ export default function AdminDashboard() {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/products');
+      const res = await fetch(`${LIVE_BACKEND_URL}/api/products`);
       const data = await res.json();
       setProducts(data);
     } catch (err) {}
@@ -28,7 +30,7 @@ export default function AdminDashboard() {
 
   const fetchOrders = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/orders');
+      const res = await fetch(`${LIVE_BACKEND_URL}/api/orders`);
       const data = await res.json();
       setOrders(data);
     } catch (err) {}
@@ -55,7 +57,7 @@ export default function AdminDashboard() {
 
   const handleSaveProduct = async (e) => {
     e.preventDefault();
-    const url = editingProduct ? `http://localhost:5000/api/products/${editingProduct._id}` : 'http://localhost:5000/api/products';
+    const url = editingProduct ? `${LIVE_BACKEND_URL}/api/products/${editingProduct._id}` : `${LIVE_BACKEND_URL}/api/products`;
     const method = editingProduct ? 'PUT' : 'POST';
 
     await fetch(url, {
@@ -70,12 +72,12 @@ export default function AdminDashboard() {
 
   const handleDeleteProduct = async (id) => {
     if (!window.confirm('Delete item?')) return;
-    await fetch(`http://localhost:5000/api/products/${id}`, { method: 'DELETE' });
+    await fetch(`${LIVE_BACKEND_URL}/api/products/${id}`, { method: 'DELETE' });
     fetchProducts();
   };
 
   const handleStatusChange = async (orderId, newStatus) => {
-    await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
+    await fetch(`${LIVE_BACKEND_URL}/api/orders/${orderId}/status`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status: newStatus })
@@ -171,7 +173,6 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4 text-xs">
-                  {/* Delivery Address */}
                   <div className="md:col-span-5 bg-[#faf6f5] p-3.5 rounded-lg space-y-1">
                     <p className="font-bold text-[#2b2524]">{o.customerName}</p>
                     <p className="text-[#b57c70]">{o.customerEmail}</p>
@@ -186,12 +187,10 @@ export default function AdminDashboard() {
                     )}
                   </div>
 
-                  {/* Customer Idea & Reference Photos */}
                   <div className="md:col-span-7 bg-[#f5ebe8]/40 p-3.5 rounded-lg space-y-1">
                     <p className="font-bold text-[#2b2524] text-[10px] uppercase tracking-wider flex items-center gap-1">
                       <Type className="w-3.5 h-3.5 text-[#b57c70]" /> Customer Idea & Requirements:
                     </p>
-                    
                     <p className="text-[#2b2524]/90 leading-relaxed italic bg-white p-2 rounded border border-[#b57c70]/10">
                       "{o.customizationDetails}"
                     </p>
@@ -205,7 +204,6 @@ export default function AdminDashboard() {
                       </p>
                     )}
 
-                    {/* ATTACHED CUSTOMER REFERENCE PHOTOS */}
                     {o.attachedPhotos && o.attachedPhotos.length > 0 && (
                       <div className="pt-2 border-t border-[#b57c70]/10">
                         <p className="font-bold text-[#b57c70] text-[10px] uppercase mb-1 flex items-center gap-1">
