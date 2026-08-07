@@ -1,10 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, Clock, Truck, CheckCircle2, MapPin, Link as LinkIcon, Sparkles, RefreshCw, Type, Image as ImageIcon } from 'lucide-react';
+import { Package, Clock, Truck, CheckCircle2, MapPin, Link as LinkIcon, Sparkles, RefreshCw, Type, Image as ImageIcon, Star, X } from 'lucide-react';
 
 export default function MyOrdersPage({ currentUser }) {
   const [userOrders, setUserOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Verified Buyer Review Modal State
+  const [selectedOrderForReview, setSelectedOrderForReview] = useState(null);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmittedSuccess, setReviewSubmittedSuccess] = useState(false);
 
   useEffect(() => {
     if (currentUser && currentUser.email) {
@@ -17,7 +23,7 @@ export default function MyOrdersPage({ currentUser }) {
   const fetchUserOrders = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:5000/api/orders/user/${currentUser.email}`);
+      const res = await fetch(`https://larks-by-lekhani.onrender.com/api/orders/user/${currentUser.email}`);
       if (res.ok) {
         const data = await res.json();
         setUserOrders(data);
@@ -39,6 +45,32 @@ export default function MyOrdersPage({ currentUser }) {
     }
   };
 
+  const handlePostVerifiedReview = (e) => {
+    e.preventDefault();
+    if (!selectedOrderForReview || !reviewComment) return;
+
+    const newReview = {
+      id: Date.now(),
+      name: currentUser.name || 'Verified Buyer',
+      rating: Number(reviewRating),
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      productTitle: selectedOrderForReview.productTitle,
+      comment: reviewComment,
+      verified: true
+    };
+
+    const existingReviews = JSON.parse(localStorage.getItem('larks_product_reviews') || '[]');
+    const updated = [newReview, ...existingReviews];
+    localStorage.setItem('larks_product_reviews', JSON.stringify(updated));
+
+    setReviewSubmittedSuccess(true);
+    setTimeout(() => {
+      setReviewSubmittedSuccess(false);
+      setSelectedOrderForReview(null);
+      setReviewComment('');
+    }, 1500);
+  };
+
   return (
     <div className="min-h-screen bg-[#faf6f5] py-16 px-4 sm:px-6 lg:px-8">
       <div className="max-w-5xl mx-auto space-y-10">
@@ -50,10 +82,10 @@ export default function MyOrdersPage({ currentUser }) {
               <Sparkles className="w-3.5 h-3.5" /> Handcrafted Studio Tracking
             </div>
             <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#2b2524]">
-              My Orders & Live Status
+              My Orders & Verified Reviews
             </h1>
             <p className="text-xs text-[#2b2524]/70 mt-1">
-              Track your custom handcrafted requests created by Lekhani & studio team.
+              Track your custom handcrafted requests and leave verified reviews for your purchased items.
             </p>
           </div>
 
@@ -106,13 +138,24 @@ export default function MyOrdersPage({ currentUser }) {
                       </p>
                     </div>
 
-                    <div className="text-right">
-                      <span className="text-base font-bold text-[#b57c70]">
-                        ₹{order.totalAmount}
-                      </span>
-                      <span className="block text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded mt-1">
-                        {order.paymentStatus || 'Paid Online'}
-                      </span>
+                    <div className="flex items-center gap-3">
+                      <div className="text-right">
+                        <span className="text-base font-bold text-[#b57c70]">
+                          ₹{order.totalAmount}
+                        </span>
+                        <span className="block text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded mt-0.5">
+                          {order.paymentStatus || 'Paid Online'}
+                        </span>
+                      </div>
+
+                      {/* VERIFIED BUYER REVIEW BUTTON */}
+                      <button
+                        onClick={() => setSelectedOrderForReview(order)}
+                        className="px-3.5 py-2 bg-[#b57c70] hover:bg-[#9e675b] text-white text-xs font-bold rounded-md shadow transition-all flex items-center gap-1.5"
+                      >
+                        <Star className="w-3.5 h-3.5 fill-current" />
+                        <span>Write Review</span>
+                      </button>
                     </div>
                   </div>
 
@@ -202,6 +245,74 @@ export default function MyOrdersPage({ currentUser }) {
         )}
 
       </div>
+
+      {/* VERIFIED BUYER REVIEW MODAL */}
+      {selectedOrderForReview && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-[#b57c70]/30 relative text-xs space-y-4">
+            
+            <button
+              onClick={() => setSelectedOrderForReview(null)}
+              className="absolute top-4 right-4 text-[#2b2524]/50 hover:text-[#2b2524]"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div>
+              <span className="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                Verified Buyer Review
+              </span>
+              <h3 className="font-serif text-lg font-bold text-[#2b2524] mt-1">
+                Write a Review for {selectedOrderForReview.productTitle}
+              </h3>
+            </div>
+
+            {reviewSubmittedSuccess ? (
+              <div className="p-6 bg-emerald-50 text-emerald-800 rounded-xl text-center space-y-2">
+                <CheckCircle2 className="w-10 h-10 text-emerald-600 mx-auto" />
+                <h4 className="font-bold text-sm">Review Posted Successfully!</h4>
+                <p className="text-[11px]">Your verified review is now live on the product page.</p>
+              </div>
+            ) : (
+              <form onSubmit={handlePostVerifiedReview} className="space-y-3">
+                <div>
+                  <label className="block font-bold text-[#2b2524] mb-1">Your Rating</label>
+                  <select
+                    value={reviewRating}
+                    onChange={(e) => setReviewRating(Number(e.target.value))}
+                    className="w-full p-2.5 rounded border border-[#2b2524]/20 bg-[#faf6f5]"
+                  >
+                    <option value={5}>5 Stars - Outstanding Quality</option>
+                    <option value={4}>4 Stars - Very Good</option>
+                    <option value={3}>3 Stars - Good</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[#2b2524] mb-1">Your Review Feedback *</label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    placeholder="Share how you liked the handcrafted quality, packaging, or custom design..."
+                    className="w-full p-2.5 rounded border border-[#2b2524]/20 bg-[#faf6f5] leading-relaxed"
+                  ></textarea>
+                </div>
+
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-[#b57c70] hover:bg-[#9e675b] text-white font-bold uppercase rounded-md shadow transition-all"
+                >
+                  Publish Verified Review
+                </button>
+              </form>
+            )}
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

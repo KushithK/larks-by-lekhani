@@ -11,7 +11,28 @@ const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 const YOUR_REAL_UPI_ID = "larksbylekhani@upi";
 const STUDIO_BUSINESS_NAME = "Larks by Lekhani";
 
-// FAIL-SAFE CATALOG (Ensures 0.01s instant loading even if free server is sleeping)
+// INITIAL VERIFIED REVIEWS
+const INITIAL_REVIEWS = [
+  {
+    id: 1,
+    name: "Ananya Sharma",
+    rating: 5,
+    date: "August 2, 2026",
+    productTitle: "Birthday Story Mini Memory Album",
+    comment: "Absolutely stunning quality! The custom notes and gold-foil detail were done with so much handcrafted care.",
+    verified: true
+  },
+  {
+    id: 2,
+    name: "Rohan Verma",
+    rating: 5,
+    date: "July 29, 2026",
+    productTitle: "Handcrafted Floral Resin Keychain",
+    comment: "Arrived in 4 days in pristine packaging. Worth every penny for personalized gifting!",
+    verified: true
+  }
+];
+
 const FALLBACK_CATALOG = [
   {
     _id: "1",
@@ -100,28 +121,11 @@ export default function ProductDetailPage() {
   // Photo Attachment Upload State
   const [attachedPhotos, setAttachedPhotos] = useState([]);
 
-  // Customer Reviews State
-  const [productReviews, setProductReviews] = useState([
-    {
-      id: 1,
-      name: "Ananya Sharma",
-      rating: 5,
-      date: "August 2, 2026",
-      comment: "Absolutely stunning quality! The custom notes and gold-foil detail were done with so much handcrafted care.",
-      verified: true
-    },
-    {
-      id: 2,
-      name: "Rohan Verma",
-      rating: 5,
-      date: "July 29, 2026",
-      comment: "Arrived in 4 days in pristine packaging. Worth every penny for personalized gifting!",
-      verified: true
-    }
-  ]);
-  const [newReviewText, setNewReviewText] = useState('');
-  const [newReviewName, setNewReviewName] = useState('');
-  const [newReviewRating, setNewReviewNameRating] = useState(5);
+  // Verified Customer Reviews State
+  const [allReviews, setAllReviews] = useState(() => {
+    const saved = localStorage.getItem('larks_product_reviews');
+    return saved ? JSON.parse(saved) : INITIAL_REVIEWS;
+  });
 
   // Shipping Form State
   const [paymentMethod, setPaymentMethod] = useState('online');
@@ -157,10 +161,9 @@ export default function ProductDetailPage() {
         return;
       }
     } catch (err) {
-      console.error('Fetching from live backend...', err);
+      console.error('Fetch error:', err);
     }
 
-    // INSTANT GUARANTEED FALLBACK (Never shows "Artifact Not Found")
     const matched = FALLBACK_CATALOG.find(p => p._id === String(id)) || FALLBACK_CATALOG[0];
     setProduct(matched);
     setLoading(false);
@@ -227,22 +230,6 @@ export default function ProductDetailPage() {
     setShowRazorpayModal(true);
   };
 
-  const handleAddReviewSubmit = (e) => {
-    e.preventDefault();
-    if (!newReviewText || !newReviewName) return;
-    const review = {
-      id: Date.now(),
-      name: newReviewName,
-      rating: newReviewRating,
-      date: 'Just now',
-      comment: newReviewText,
-      verified: true
-    };
-    setProductReviews([review, ...productReviews]);
-    setNewReviewText('');
-    setNewReviewName('');
-  };
-
   const handleRealMoneyPayment = async () => {
     setIsProcessingRazorpay(true);
     
@@ -302,11 +289,8 @@ export default function ProductDetailPage() {
           }, 1200);
           return;
         }
-      } catch (err) {
-        // Fallback Order Confirmation
-      }
+      } catch (err) {}
 
-      // Fallback confirmation display if offline
       setTimeout(() => {
         setIsProcessingRazorpay(false);
         setShowRazorpayModal(false);
@@ -348,8 +332,6 @@ export default function ProductDetailPage() {
 
   const originalPrice = product.basePrice;
   const strikeThroughMRP = originalPrice * 2;
-  const itemSubtotal = originalPrice * quantity;
-  const grandTotal = itemSubtotal + deliveryCharge;
 
   return (
     <div className="min-h-screen bg-[#faf6f5] py-10 px-4 sm:px-6 lg:px-8">
@@ -411,7 +393,7 @@ export default function ProductDetailPage() {
                 to="/my-orders"
                 className="px-6 py-3 bg-[#b57c70] text-white text-xs font-bold uppercase tracking-widest rounded-md hover:bg-[#9e675b] transition-all shadow"
               >
-                Track Live Order Status
+                Track Live Order Status & Review
               </Link>
               <Link
                 to="/"
@@ -482,7 +464,7 @@ export default function ProductDetailPage() {
                       <Star key={i} className="w-4 h-4 fill-current" />
                     ))}
                   </div>
-                  <span className="text-xs text-[#2b2524]/70 font-medium">({productReviews.length} customer reviews)</span>
+                  <span className="text-xs text-[#2b2524]/70 font-medium">(Verified Buyers Ratings)</span>
                 </div>
 
                 <div className="mt-4 flex items-baseline gap-3">
@@ -566,14 +548,14 @@ export default function ProductDetailPage() {
           </div>
         )}
 
-        {/* REVIEWS SECTION BELOW */}
+        {/* VERIFIED CUSTOMER REVIEWS DISPLAY ONLY (UNVERIFIED FORM REMOVED) */}
         {!orderConfirmed && (
-          <div className="border-t border-[#b57c70]/20 pt-12 space-y-8">
+          <div className="border-t border-[#b57c70]/20 pt-12 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <span className="text-[10px] uppercase font-bold text-[#b57c70] tracking-widest">Verified Feedback</span>
+                <span className="text-[10px] uppercase font-bold text-[#b57c70] tracking-widest">Verified Buyer Ratings</span>
                 <h2 className="font-serif text-2xl font-bold text-[#2b2524] mt-0.5">
-                  Customer Reviews for {product.title}
+                  Customer Reviews
                 </h2>
               </div>
 
@@ -587,39 +569,15 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            <form onSubmit={handleAddReviewSubmit} className="bg-white p-6 rounded-xl border border-[#b57c70]/20 shadow-sm space-y-3 text-xs">
-              <h3 className="font-serif font-bold text-sm text-[#2b2524]">Share Your Review for this Artifact</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  value={newReviewName}
-                  onChange={(e) => setNewReviewName(e.target.value)}
-                  placeholder="Your Name"
-                  className="p-2.5 rounded border border-[#2b2524]/20 bg-[#faf6f5]"
-                />
-                <select
-                  value={newReviewRating}
-                  onChange={(e) => setNewReviewNameRating(Number(e.target.value))}
-                  className="p-2.5 rounded border border-[#2b2524]/20 bg-[#faf6f5]"
-                >
-                  <option value={5}>5 Stars - Excellent</option>
-                  <option value={4}>4 Stars - Very Good</option>
-                </select>
-              </div>
-              <textarea
-                rows={2}
-                value={newReviewText}
-                onChange={(e) => setNewReviewText(e.target.value)}
-                placeholder="Write your customer review here..."
-                className="w-full p-2.5 rounded border border-[#2b2524]/20 bg-[#faf6f5]"
-              ></textarea>
-              <button type="submit" className="px-4 py-2 bg-[#b57c70] text-white font-bold uppercase rounded text-[11px]">
-                Post Customer Review
-              </button>
-            </form>
+            <div className="bg-[#f5ebe8]/40 p-4 rounded-xl border border-[#b57c70]/15 flex items-center justify-between text-xs text-[#2b2524]/80">
+              <span>Have you purchased this item? You can leave a verified review from your <strong>My Orders</strong> page!</span>
+              <Link to="/my-orders" className="text-[#b57c70] font-bold hover:underline">
+                Go to My Orders ➔
+              </Link>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {productReviews.map((rev) => (
+              {allReviews.map((rev) => (
                 <div key={rev.id} className="bg-white p-5 rounded-xl border border-[#b57c70]/15 shadow-sm space-y-2">
                   <div className="flex justify-between items-center">
                     <div className="flex text-amber-500 gap-0.5">
@@ -633,7 +591,7 @@ export default function ProductDetailPage() {
                   <div className="flex items-center gap-1.5 text-xs font-bold text-[#2b2524] pt-1">
                     <UserCheck className="w-3.5 h-3.5 text-[#b57c70]" />
                     <span>{rev.name}</span>
-                    <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-normal">Verified</span>
+                    <span className="text-[10px] text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-normal">Verified Buyer</span>
                   </div>
                 </div>
               ))}
@@ -643,7 +601,7 @@ export default function ProductDetailPage() {
 
       </div>
 
-      {/* ================= CHECKOUT MODAL ================= */}
+      {/* CHECKOUT MODAL */}
       {showCheckout && !orderConfirmed && (
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-[#b57c70]/30 max-h-[90vh] overflow-y-auto">
@@ -660,7 +618,6 @@ export default function ProductDetailPage() {
 
             <form onSubmit={handleProceedToPayment} className="space-y-4 text-xs">
               
-              {/* CUSTOMIZATION BOX (OPTIONAL) */}
               <div className="bg-[#f5ebe8]/60 p-4 rounded-xl border border-[#b57c70]/20 space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="font-serif font-bold text-sm text-[#2b2524] flex items-center gap-1.5">
