@@ -9,7 +9,6 @@ const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/larks_by_lekhani';
 const JWT_SECRET = 'larks_by_lekhani_super_secret_key_2026';
 
-// Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
@@ -53,72 +52,81 @@ const User = mongoose.models.User || mongoose.model('User', userSchema);
 const Product = mongoose.models.Product || mongoose.model('Product', productSchema);
 const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
 
-// In-Memory Fallbacks
+// In-Memory Fallbacks & Permanent Product Catalog
 let inMemoryUsers = [];
 let inMemoryOrders = [];
 let inMemoryProducts = [
   {
     _id: "1",
-    title: "Interactive Story Memory Sparkbook",
-    basePrice: 599,
-    category: "Sparkbooks",
+    title: "Birthday Story Mini Memory Album",
+    basePrice: 499,
+    category: "Gift Albums",
     images: ["https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop"],
-    description: "A handcrafted interactive flip-book featuring pull-out surprise tabs, secret photo envelopes, and pop-up memory cards.",
-    artisanalDetails: ["300 GSM heavy cardstock", "Hand-assembled interactive mechanisms"]
+    description: "A compact handcrafted birthday memory album book with interactive flip tabs, pull-out photo sleeves, and cute birthday prompts.",
+    artisanalDetails: ["Hand-stitched spine", "Acid-free archival pages", "Includes birthday sticker sheet"]
   },
   {
     _id: "2",
-    title: "Velvet Heirloom Premium Gift Album",
-    basePrice: 1299,
-    category: "Gift Albums",
-    images: ["https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop"],
-    description: "Luxurious handcrafted keepsake album bound in premium plush velvet with custom gold-foil title stamping.",
-    artisanalDetails: ["Acid-free archival pages", "Custom gold hot foil stamping"]
+    title: "Handcrafted Floral Resin Keychain",
+    basePrice: 149,
+    category: "Keychains",
+    images: ["https://images.unsplash.com/photo-1611591475171-d41c10d32cb5?q=80&w=800&auto=format&fit=crop"],
+    description: "Charming small gift keychain featuring real pressed dried flowers, subtle foil accents, and a durable antique brass ring.",
+    artisanalDetails: ["Real dried flowers", "Lightweight epoxy resin", "Rustproof brass keyring"]
   },
   {
     _id: "3",
-    title: "Botanical Floral Resin Photo Frame",
-    basePrice: 799,
-    category: "Photo Frames",
-    images: ["https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"],
-    description: "Solid natural teakwood photo frame infused with crystal-clear hand-poured resin and real preserved dried flowers.",
-    artisanalDetails: ["Solid natural teakwood frame", "Real pressed botanicals"]
+    title: "Sweet Bird Gift Hamper Box",
+    basePrice: 999,
+    category: "Gift Boxes",
+    images: ["https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop"],
+    description: "A delightful small bird-themed gift box curated with ribbon, a dainty necklace, custom keychain, sticker pack, hair clips, earrings, and a face mask.",
+    artisanalDetails: ["Includes 7 curated items", "Hand-tied satin ribbon box", "Includes custom wax-sealed card"]
   },
   {
     _id: "4",
-    title: "Personalized Miniature Initial Resin Keychain",
-    basePrice: 199,
-    category: "Keychains",
-    images: ["https://images.unsplash.com/photo-1611591475171-d41c10d32cb5?q=80&w=800&auto=format&fit=crop"],
-    description: "Small handcrafted initial keychain featuring embedded dried flowers and gold flakes on an antique brass keyring.",
-    artisanalDetails: ["Custom alphabet shape choice", "Heavy-duty rustproof brass key ring"]
+    title: "Artisanal Designed Gift Cards Set",
+    basePrice: 99,
+    category: "Gift Cards",
+    images: ["https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"],
+    description: "Set of custom designed aesthetic gift cards with gold foil stamping, blank interior for personal notes, and vintage kraft envelope.",
+    artisanalDetails: ["300 GSM textured paper", "Gold foil accents", "Includes vintage kraft envelope"]
   },
   {
     _id: "5",
-    title: "Custom Birthday Collage Photo Frame",
-    basePrice: 699,
-    category: "Photo Frames",
-    images: ["https://images.unsplash.com/photo-1582562124811-c09040d0a901?q=80&w=800&auto=format&fit=crop"],
-    description: "Elegant white acrylic photo frame featuring a multi-photo collage layout with custom birthday typography.",
-    artisanalDetails: ["Multi-photo collage design", "High-definition archival print"]
+    title: "Cute Handmade Crochet Flower Card",
+    basePrice: 199,
+    category: "Cards & Keepsakes",
+    images: ["https://images.unsplash.com/photo-1528458909336-e7a0adfac1d5?q=80&w=800&auto=format&fit=crop"],
+    description: "Adorable handcrafted greeting card featuring a soft 3D hand-crocheted yarn flower stem on premium cardstock at an affordable price.",
+    artisanalDetails: ["100% hand-crocheted flower", "300 GSM kraft cardstock", "Blank interior for custom message"]
   },
   {
     _id: "6",
-    title: "Heartmade Vintage Teakwood Portrait Frame",
-    basePrice: 749,
-    category: "Photo Frames",
-    images: ["https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"],
-    description: "Classic rich mahogany wood frame handcrafted to preserve cherished family and portrait memories.",
-    artisanalDetails: ["Hand-finished wooden frame", "Glass protection panel"]
+    title: "Handmade Crochet Mini Bucket",
+    basePrice: 299,
+    category: "Crochet & Crafts",
+    images: ["https://images.unsplash.com/photo-1582562124811-c09040d0a901?q=80&w=800&auto=format&fit=crop"],
+    description: "Cute hand-crocheted mini bucket pouch crafted with soft cotton yarn, perfect for holding small trinkets, jewelry, or desktop accessories.",
+    artisanalDetails: ["100% soft cotton yarn", "Hand-stitched handle", "Washable & durable"]
   },
   {
     _id: "7",
-    title: "Lace Ribbon Artisanal Gift Box & Hamper",
-    basePrice: 1199,
-    category: "Gift Boxes",
-    images: ["https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop"],
-    description: "Bespoke handcrafted gift box wrapped in organic linen, real dried floral tulip accents, and vintage lace ribbon.",
-    artisanalDetails: ["Hand-tied lace ribbon", "Eco-friendly linen wrapping"]
+    title: "Custom Die-Cast Car Display Frame",
+    basePrice: 899,
+    category: "Photo Frames",
+    images: ["https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=800&auto=format&fit=crop"],
+    description: "Bespoke 3D shadow box frame designed specifically to display your favorite die-cast model car with custom background graphics.",
+    artisanalDetails: ["Deep 3D shadow box frame", "Custom background graphics", "Glass front protection"]
+  },
+  {
+    _id: "8",
+    title: "Heartmade Custom Memory Frame",
+    basePrice: 649,
+    category: "Photo Frames",
+    images: ["https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"],
+    description: "Handmade wooden memory photo frame customized with your favorite photographs, dried botanicals, and personalized names.",
+    artisanalDetails: ["Solid teakwood frame", "Real dried flowers", "Custom photo print included"]
   }
 ];
 

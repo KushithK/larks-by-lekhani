@@ -26,7 +26,17 @@ export default function UserCatalog() {
     }
   };
 
-  const categories = ['All', 'Sparkbooks', 'Gift Albums', 'Photo Frames', 'Keychains'];
+  // Updated categories matching your 8 products
+  const categories = [
+    'All', 
+    'Gift Albums', 
+    'Keychains', 
+    'Gift Boxes', 
+    'Gift Cards', 
+    'Cards & Keepsakes', 
+    'Crochet & Crafts', 
+    'Photo Frames'
+  ];
 
   const filteredProducts = products.filter((product) => {
     const matchesCategory = selectedCategory === 'All' || product.category === selectedCategory;
@@ -41,13 +51,13 @@ export default function UserCatalog() {
       <section className="bg-gradient-to-b from-[#f5ebe8] to-[#faf6f5] py-16 px-4 sm:px-6 lg:px-8 border-b border-[#b57c70]/10 text-center">
         <div className="max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#b57c70]/15 text-[#b57c70] text-xs font-semibold uppercase tracking-widest">
-            <Sparkles className="w-3.5 h-3.5" /> Studio Storefront
+            <Sparkles className="w-3.5 h-3.5" /> Larks Creative House
           </div>
           <h1 className="font-serif text-4xl sm:text-5xl font-bold text-[#2b2524]">
             Larks by Lekhani
           </h1>
           <p className="text-base text-[#2b2524]/80 font-light max-w-lg mx-auto">
-            Bespoke Sparkbooks, Premium Gift Albums, Photo Frames & Small Keychains
+            Heartmade Albums, Keychains, Hampers, Crochet Crafts & Custom Photo Frames
           </p>
 
           <div className="max-w-md mx-auto pt-4">
