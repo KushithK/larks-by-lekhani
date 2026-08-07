@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon, CheckCircle2, Upload, ArrowRight, Check, AlertCircle } from 'lucide-react';
+import { 
+  Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, 
+  ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon, 
+  CheckCircle2, Upload, ArrowRight, Check, AlertCircle, ZoomIn, Eye 
+} from 'lucide-react';
 
 const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
+const STATUS_STEPS = ['Pending Review', 'In Production', 'Dispatched', 'Completed'];
 
 // AUTOMATIC CANVAS COMPRESSOR
 const compressImageFile = (file, maxWidth = 800, maxHeight = 800, quality = 0.7) => {
@@ -45,6 +50,9 @@ export default function AdminDashboard() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [showSaveSuccessPopup, setShowSaveSuccessPopup] = useState(false);
   
+  // HOVER PHOTO PREVIEW STATE
+  const [hoveredPhoto, setHoveredPhoto] = useState(null);
+
   // Status Step Change Confirmation Modal State
   const [pendingAdvanceOrder, setPendingAdvanceOrder] = useState(null);
   const [pendingNextStatus, setPendingNextStatus] = useState('');
@@ -168,14 +176,12 @@ export default function AdminDashboard() {
     fetchProducts();
   };
 
-  // OPEN CONFIRMATION MODAL BEFORE ADVANCING
   const openConfirmAdvanceModal = (order, nextStatus) => {
     setPendingAdvanceOrder(order);
     setPendingNextStatus(nextStatus);
     setShowConfirmModal(true);
   };
 
-  // EXECUTE ADVANCE STATUS AFTER CONFIRMATION
   const executeOrderAdvance = async () => {
     if (!pendingAdvanceOrder || !pendingNextStatus) return;
 
@@ -208,7 +214,7 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-[#faf6f5] py-10 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#faf6f5] py-10 px-4 sm:px-6 lg:px-8 relative">
       <div className="max-w-7xl mx-auto">
         
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 pb-6 border-b border-[#b57c70]/20">
@@ -302,13 +308,11 @@ export default function AdminDashboard() {
                     </span>
                   </div>
 
-                  {/* SINGLE ACTION BUTTON (DROPDOWN REMOVED) */}
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded">
                       {o.paymentStatus || 'Paid Online'} (₹{o.totalAmount})
                     </span>
 
-                    {/* Step 1 ➔ Step 2 */}
                     {(!o.status || o.status === 'Pending Review') && (
                       <button
                         type="button"
@@ -319,7 +323,6 @@ export default function AdminDashboard() {
                       </button>
                     )}
 
-                    {/* Step 2 ➔ Step 3 */}
                     {o.status === 'In Production' && (
                       <button
                         type="button"
@@ -330,7 +333,6 @@ export default function AdminDashboard() {
                       </button>
                     )}
 
-                    {/* Step 3 ➔ Step 4 */}
                     {o.status === 'Dispatched' && (
                       <button
                         type="button"
@@ -341,9 +343,8 @@ export default function AdminDashboard() {
                       </button>
                     )}
 
-                    {/* Final Step */}
                     {o.status === 'Completed' && (
-                      <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-full flex items-center gap-1">
+                      <span className="px-3.5 py-1.5 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-full flex items-center gap-1">
                         ✓ Order Completed
                       </span>
                     )}
@@ -369,6 +370,7 @@ export default function AdminDashboard() {
                     <p className="font-bold text-[#2b2524] text-[10px] uppercase tracking-wider flex items-center gap-1">
                       <Type className="w-3.5 h-3.5 text-[#b57c70]" /> Customer Idea & Requirements:
                     </p>
+                    
                     <p className="text-[#2b2524]/90 leading-relaxed italic bg-white p-2 rounded border border-[#b57c70]/10">
                       "{o.customizationDetails}"
                     </p>
@@ -382,16 +384,29 @@ export default function AdminDashboard() {
                       </p>
                     )}
 
+                    {/* ATTACHED REFERENCE PHOTOS WITH HOVER ZOOM PREVIEW */}
                     {o.attachedPhotos && o.attachedPhotos.length > 0 && (
                       <div className="pt-2 border-t border-[#b57c70]/10">
-                        <p className="font-bold text-[#b57c70] text-[10px] uppercase mb-1 flex items-center gap-1">
-                          <ImageIcon className="w-3 h-3" /> Attached Reference Photos ({o.attachedPhotos.length}):
+                        <p className="font-bold text-[#b57c70] text-[10px] uppercase mb-1.5 flex items-center gap-1">
+                          <ImageIcon className="w-3 h-3" /> Attached Reference Photos ({o.attachedPhotos.length}) — Hover to Zoom:
                         </p>
-                        <div className="flex gap-2 overflow-x-auto">
+                        <div className="flex gap-2.5 overflow-x-auto py-1">
                           {o.attachedPhotos.map((imgData, idx) => (
-                            <a key={idx} href={imgData} target="_blank" rel="noopener noreferrer">
-                              <img src={imgData} alt="Reference Upload" className="w-14 h-14 object-cover rounded border border-[#b57c70]/30 shadow-sm hover:scale-105 transition-transform cursor-pointer" />
-                            </a>
+                            <div
+                              key={idx}
+                              onMouseEnter={() => setHoveredPhoto(imgData)}
+                              onMouseLeave={() => setHoveredPhoto(null)}
+                              className="relative group cursor-zoom-in flex-shrink-0"
+                            >
+                              <img
+                                src={imgData}
+                                alt={`Reference ${idx + 1}`}
+                                className="w-16 h-16 object-cover rounded-lg border-2 border-[#b57c70]/30 shadow-sm group-hover:border-[#b57c70] group-hover:scale-110 transition-all duration-300"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 rounded-lg transition-colors flex items-center justify-center">
+                                <ZoomIn className="w-4 h-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                              </div>
+                            </div>
                           ))}
                         </div>
                       </div>
@@ -404,6 +419,23 @@ export default function AdminDashboard() {
         )}
 
       </div>
+
+      {/* HOVER PREVIEW ENLARGED IMAGE CARD */}
+      {hoveredPhoto && (
+        <div className="fixed bottom-10 right-10 z-50 pointer-events-none bg-white p-3 rounded-2xl border-2 border-[#b57c70] shadow-2xl animate-in fade-in zoom-in max-w-sm sm:max-w-md">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#b57c70] mb-2 pb-1 border-b">
+            <Eye className="w-4 h-4" /> Customer Reference Photo Preview
+          </div>
+          <img
+            src={hoveredPhoto}
+            alt="Enlarged Reference Preview"
+            className="w-72 sm:w-80 h-72 sm:h-80 object-cover rounded-xl shadow-inner bg-[#faf6f5]"
+          />
+          <p className="text-[10px] text-[#2b2524]/60 text-center mt-2 font-medium">
+            Hovering attached photo preview
+          </p>
+        </div>
+      )}
 
       {/* STEP ADVANCE CONFIRMATION POP-UP MODAL */}
       {showConfirmModal && pendingAdvanceOrder && (
