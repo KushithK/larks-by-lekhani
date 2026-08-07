@@ -26,7 +26,6 @@ export default function UserCatalog() {
     }
   };
 
-  // Updated categories matching your 8 products
   const categories = [
     'All', 
     'Gift Albums', 
@@ -48,6 +47,7 @@ export default function UserCatalog() {
 
   return (
     <div className="min-h-screen bg-[#faf6f5]">
+      {/* Hero Banner */}
       <section className="bg-gradient-to-b from-[#f5ebe8] to-[#faf6f5] py-16 px-4 sm:px-6 lg:px-8 border-b border-[#b57c70]/10 text-center">
         <div className="max-w-3xl mx-auto space-y-4">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#b57c70]/15 text-[#b57c70] text-xs font-semibold uppercase tracking-widest">
@@ -83,6 +83,7 @@ export default function UserCatalog() {
         </div>
       </section>
 
+      {/* Main Catalog Grid */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-3 border-b border-[#b57c70]/20">
           <div className="flex items-center gap-2">
@@ -109,10 +110,13 @@ export default function UserCatalog() {
           </div>
         </div>
 
+        {/* ELEGANT CUSTOMER LOADING MESSAGE */}
         {loading ? (
-          <div className="py-20 text-center">
+          <div className="py-20 text-center space-y-3">
             <div className="inline-block w-8 h-8 border-4 border-[#b57c70] border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-xs text-[#2b2524]/60 mt-2 font-medium">Connecting to Studio Backend...</p>
+            <p className="text-xs text-[#2b2524]/70 font-serif italic tracking-wide">
+              Curating Heartmade Studio Collection...
+            </p>
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-xl border border-dashed border-[#b57c70]/30 p-8">

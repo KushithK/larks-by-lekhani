@@ -7,6 +7,8 @@ import {
   Upload, Image as ImageIcon, AlertCircle
 } from 'lucide-react';
 
+// LIVE PRODUCTION BACKEND URL
+const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 const YOUR_REAL_UPI_ID = "larksbylekhani@upi";
 const STUDIO_BUSINESS_NAME = "Larks by Lekhani";
 
@@ -54,7 +56,7 @@ export default function ProductDetailPage() {
   const [newReviewName, setNewReviewName] = useState('');
   const [newReviewRating, setNewReviewNameRating] = useState(5);
 
-  // Shipping Form State (India Fixed)
+  // Shipping Form State
   const [paymentMethod, setPaymentMethod] = useState('online');
   const [shippingForm, setShippingForm] = useState({
     contactEmail: '',
@@ -78,14 +80,17 @@ export default function ProductDetailPage() {
   }, [id]);
 
   const fetchProduct = async () => {
+    setLoading(true);
     try {
-      const response = await fetch(`http://localhost:5000/api/products/${id}`);
+      // FETCHING FROM LIVE RENDER BACKEND
+      const response = await fetch(`${LIVE_BACKEND_URL}/api/products/${id}`);
       if (response.ok) {
         const data = await response.json();
         setProduct(data);
       }
       setLoading(false);
     } catch (err) {
+      console.error('Error fetching product details:', err);
       setLoading(false);
     }
   };
@@ -132,7 +137,6 @@ export default function ProductDetailPage() {
       return;
     }
 
-    // MANDATORY DELIVERY & CONTACT INFO CHECK
     const isContactAndDeliveryValid = 
       shippingForm.contactEmail.trim() !== '' &&
       shippingForm.contactPhone.trim() !== '' &&
@@ -211,7 +215,7 @@ export default function ProductDetailPage() {
       };
 
       try {
-        const res = await fetch('http://localhost:5000/api/orders', {
+        const res = await fetch(`${LIVE_BACKEND_URL}/api/orders`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
@@ -235,8 +239,9 @@ export default function ProductDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#faf6f5] flex items-center justify-center">
+      <div className="min-h-screen bg-[#faf6f5] flex flex-col items-center justify-center space-y-3">
         <div className="w-8 h-8 border-4 border-[#b57c70] border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs font-serif italic text-[#2b2524]/70">Fetching Heartmade Artifact Details...</p>
       </div>
     );
   }
