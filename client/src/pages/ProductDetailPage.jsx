@@ -11,28 +11,7 @@ const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 const YOUR_REAL_UPI_ID = "larksbylekhani@upi";
 const STUDIO_BUSINESS_NAME = "Larks by Lekhani";
 
-// INITIAL VERIFIED REVIEWS
-const INITIAL_REVIEWS = [
-  {
-    id: 1,
-    name: "Ananya Sharma",
-    rating: 5,
-    date: "August 2, 2026",
-    productTitle: "Birthday Story Mini Memory Album",
-    comment: "Absolutely stunning quality! The custom notes and gold-foil detail were done with so much handcrafted care.",
-    verified: true
-  },
-  {
-    id: 2,
-    name: "Rohan Verma",
-    rating: 5,
-    date: "July 29, 2026",
-    productTitle: "Handcrafted Floral Resin Keychain",
-    comment: "Arrived in 4 days in pristine packaging. Worth every penny for personalized gifting!",
-    verified: true
-  }
-];
-
+// FAIL-SAFE CATALOG
 const FALLBACK_CATALOG = [
   {
     _id: "1",
@@ -100,13 +79,33 @@ const FALLBACK_CATALOG = [
   }
 ];
 
+const INITIAL_REVIEWS = [
+  {
+    id: 1,
+    name: "Ananya Sharma",
+    rating: 5,
+    date: "August 2, 2026",
+    productTitle: "Birthday Story Mini Memory Album",
+    comment: "Absolutely stunning quality! The custom notes and gold-foil detail were done with so much handcrafted care.",
+    verified: true
+  },
+  {
+    id: 2,
+    name: "Rohan Verma",
+    rating: 5,
+    date: "July 29, 2026",
+    productTitle: "Handcrafted Floral Resin Keychain",
+    comment: "Arrived in 4 days in pristine packaging. Worth every penny for personalized gifting!",
+    verified: true
+  }
+];
+
 export default function ProductDetailPage() {
   const { id } = useParams();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
-  const [selectedVariant, setSelectedVariant] = useState('Standard Handcrafted');
   
   // Checkout & Gateway Modal States
   const [showCheckout, setShowCheckout] = useState(false);
@@ -161,7 +160,7 @@ export default function ProductDetailPage() {
         return;
       }
     } catch (err) {
-      console.error('Fetch error:', err);
+      console.error('Fetching from live backend...', err);
     }
 
     const matched = FALLBACK_CATALOG.find(p => p._id === String(id)) || FALLBACK_CATALOG[0];
@@ -250,7 +249,7 @@ export default function ProductDetailPage() {
 
       const payload = {
         productId: product._id,
-        productTitle: `${product.title} (${selectedVariant})`,
+        productTitle: product.title,
         customerName: `${shippingForm.firstName} ${shippingForm.lastName}`.trim(),
         customerEmail: shippingForm.contactEmail,
         contactNumber: shippingForm.contactPhone,
@@ -297,7 +296,7 @@ export default function ProductDetailPage() {
         setShowCheckout(false);
         setOrderConfirmed({
           _id: 'LBL-' + Math.floor(100000 + Math.random() * 900000),
-          productTitle: `${product.title} (${selectedVariant})`,
+          productTitle: product.title,
           quantity,
           totalAmount: grandTotal,
           customerName: `${shippingForm.firstName} ${shippingForm.lastName}`,
@@ -332,6 +331,8 @@ export default function ProductDetailPage() {
 
   const originalPrice = product.basePrice;
   const strikeThroughMRP = originalPrice * 2;
+  const itemSubtotal = originalPrice * quantity;
+  const grandTotal = itemSubtotal + deliveryCharge;
 
   return (
     <div className="min-h-screen bg-[#faf6f5] py-10 px-4 sm:px-6 lg:px-8">
@@ -484,26 +485,7 @@ export default function ProductDetailPage() {
                 {product.description}
               </p>
 
-              <div className="space-y-2">
-                <label className="text-xs font-bold uppercase text-[#2b2524]">Select Option:</label>
-                <div className="flex flex-wrap gap-2">
-                  {['Standard Handcrafted', 'Deluxe Velvet Box', 'Custom Gift Edition'].map((variant) => (
-                    <button
-                      key={variant}
-                      type="button"
-                      onClick={() => setSelectedVariant(variant)}
-                      className={`px-3.5 py-2 rounded-md text-xs font-semibold border transition-all ${
-                        selectedVariant === variant
-                          ? 'border-[#b57c70] bg-[#f5ebe8] text-[#b57c70] shadow-sm'
-                          : 'border-[#2b2524]/20 bg-white text-[#2b2524] hover:border-[#b57c70]'
-                      }`}
-                    >
-                      {variant}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
+              {/* Quantity Counter & Buttons (Option Selector Removed) */}
               <div className="space-y-4 pt-2">
                 <div className="flex items-center gap-4">
                   <label className="text-xs font-bold uppercase text-[#2b2524]">Quantity:</label>
@@ -548,7 +530,7 @@ export default function ProductDetailPage() {
           </div>
         )}
 
-        {/* VERIFIED CUSTOMER REVIEWS DISPLAY ONLY (UNVERIFIED FORM REMOVED) */}
+        {/* VERIFIED CUSTOMER REVIEWS DISPLAY ONLY */}
         {!orderConfirmed && (
           <div className="border-t border-[#b57c70]/20 pt-12 space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -618,6 +600,7 @@ export default function ProductDetailPage() {
 
             <form onSubmit={handleProceedToPayment} className="space-y-4 text-xs">
               
+              {/* CUSTOMIZATION BOX (OPTIONAL) */}
               <div className="bg-[#f5ebe8]/60 p-4 rounded-xl border border-[#b57c70]/20 space-y-3">
                 <div className="flex items-center justify-between">
                   <h4 className="font-serif font-bold text-sm text-[#2b2524] flex items-center gap-1.5">
