@@ -1,17 +1,28 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Sparkles, Filter, Search } from 'lucide-react';
+import { ArrowRight, Sparkles, Filter, Search, Flame } from 'lucide-react';
 
 const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 
+// DEFAULT FALLBACK HIGHLIGHTS
+const FALLBACK_HIGHLIGHTS = [
+  { _id: "h1", title: "Bespoke Albums", imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop" },
+  { _id: "h2", title: "Floral Resin", imageUrl: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop" },
+  { _id: "h3", title: "3D Car Frames", imageUrl: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=800&auto=format&fit=crop" },
+  { _id: "h4", title: "Bird Hampers", imageUrl: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop" },
+  { _id: "h5", title: "Crochet Crafts", imageUrl: "https://images.unsplash.com/photo-1582562124811-c09040d0a901?q=80&w=800&auto=format&fit=crop" }
+];
+
 export default function UserCatalog() {
   const [products, setProducts] = useState([]);
+  const [highlights, setHighlights] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchProducts();
+    fetchHighlights();
   }, []);
 
   const fetchProducts = async () => {
@@ -23,6 +34,20 @@ export default function UserCatalog() {
     } catch (error) {
       console.error('Failed to fetch products:', error);
       setLoading(false);
+    }
+  };
+
+  const fetchHighlights = async () => {
+    try {
+      const response = await fetch(`${LIVE_BACKEND_URL}/api/highlights`);
+      if (response.ok) {
+        const data = await response.json();
+        setHighlights(data.length > 0 ? data : FALLBACK_HIGHLIGHTS);
+      } else {
+        setHighlights(FALLBACK_HIGHLIGHTS);
+      }
+    } catch (err) {
+      setHighlights(FALLBACK_HIGHLIGHTS);
     }
   };
 
@@ -47,20 +72,76 @@ export default function UserCatalog() {
 
   return (
     <div className="min-h-screen bg-[#faf6f5]">
-      {/* Hero Banner */}
+      
+      {/* INLINE ANIMATION STYLES FOR FLOATING & SWAYING HIGHLIGHTS */}
+      <style>{`
+        @keyframes floatUpDown {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-8px) rotate(1deg); }
+        }
+        @keyframes marqueeSway {
+          0%, 100% { transform: translateX(0px); }
+          50% { transform: translateX(12px); }
+        }
+        .animate-float-slow {
+          animation: floatUpDown 3.2s ease-in-out infinite, marqueeSway 6s ease-in-out infinite;
+        }
+      `}</style>
+
+      {/* Hero Banner Header */}
       <section className="bg-gradient-to-b from-[#f5ebe8] to-[#faf6f5] py-16 px-4 sm:px-6 lg:px-8 border-b border-[#b57c70]/10 text-center">
-        <div className="max-w-3xl mx-auto space-y-4">
+        <div className="max-w-4xl mx-auto space-y-6">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#b57c70]/15 text-[#b57c70] text-xs font-semibold uppercase tracking-widest">
             <Sparkles className="w-3.5 h-3.5" /> Larks Creative House
           </div>
+          
           <h1 className="font-serif text-4xl sm:text-5xl font-bold text-[#2b2524]">
             Larks by Lekhani
           </h1>
+          
           <p className="text-base text-[#2b2524]/80 font-light max-w-lg mx-auto">
             Heartmade Albums, Keychains, Hampers, Crochet Crafts & Custom Photo Frames
           </p>
 
-          <div className="max-w-md mx-auto pt-4">
+          {/* ================= BRAND PRODUCT HIGHLIGHTS BAR (AFTER NAME, BEFORE SEARCH BAR) ================= */}
+          <div className="pt-4 pb-2">
+            <div className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#b57c70] mb-3">
+              <Flame className="w-3.5 h-3.5 text-amber-500 fill-current animate-pulse" />
+              <span>Studio Highlights Reel</span>
+            </div>
+
+            {/* FLOATING ANIMATED REEL */}
+            <div className="flex items-center justify-center gap-4 sm:gap-6 overflow-x-auto py-2 px-4 no-scrollbar">
+              {highlights.map((item, idx) => (
+                <div
+                  key={item._id || idx}
+                  onClick={() => {
+                    const matchedCat = categories.find(c => c.toLowerCase().includes(item.title.toLowerCase().split(' ')[0]));
+                    if (matchedCat) setSelectedCategory(matchedCat);
+                  }}
+                  className="group flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0 animate-float-slow"
+                  style={{ animationDelay: `${idx * 0.4}s` }}
+                >
+                  {/* Floating Bubble with Gradient Ring */}
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full p-1 bg-gradient-to-tr from-[#b57c70] via-amber-400 to-[#2b2524] shadow-md group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-white">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.title}
+                        className="w-full h-full object-cover group-hover:rotate-3 transition-transform duration-500"
+                      />
+                    </div>
+                  </div>
+                  <span className="text-[11px] font-bold text-[#2b2524] group-hover:text-[#b57c70] transition-colors font-serif">
+                    {item.title}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* SEARCH BAR (AFTER HIGHLIGHTS) */}
+          <div className="max-w-md mx-auto pt-2">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-[#2b2524]/40" />
               <input
@@ -110,7 +191,6 @@ export default function UserCatalog() {
           </div>
         </div>
 
-        {/* ELEGANT CUSTOMER LOADING MESSAGE */}
         {loading ? (
           <div className="py-20 text-center space-y-3">
             <div className="inline-block w-8 h-8 border-4 border-[#b57c70] border-t-transparent rounded-full animate-spin"></div>

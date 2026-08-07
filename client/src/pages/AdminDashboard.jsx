@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, 
-  ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon, 
-  CheckCircle2, Upload, ArrowRight, Check, AlertCircle, ZoomIn, Eye 
-} from 'lucide-react';
+import { Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon, CheckCircle2, Upload, ArrowRight, Check, AlertCircle, ZoomIn, Eye, Sparkles, Flame } from 'lucide-react';
 
 const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 const STATUS_STEPS = ['Pending Review', 'In Production', 'Dispatched', 'Completed'];
 
-// AUTOMATIC CANVAS COMPRESSOR
 const compressImageFile = (file, maxWidth = 800, maxHeight = 800, quality = 0.7) => {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -44,13 +39,18 @@ const compressImageFile = (file, maxWidth = 800, maxHeight = 800, quality = 0.7)
 };
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('products');
+  const [activeTab, setActiveTab] = useState('products'); // 'products' | 'orders' | 'highlights'
   const [products, setProducts] = useState([]);
+  const [highlights, setHighlights] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [showSaveSuccessPopup, setShowSaveSuccessPopup] = useState(false);
   
-  // HOVER PHOTO PREVIEW STATE
+  // New Highlight Form State
+  const [newHighlightTitle, setNewHighlightTitle] = useState('');
+  const [newHighlightImage, setNewHighlightImage] = useState('');
+
+  // Hover Photo Preview State
   const [hoveredPhoto, setHoveredPhoto] = useState(null);
 
   // Status Step Change Confirmation Modal State
@@ -58,18 +58,11 @@ export default function AdminDashboard() {
   const [pendingNextStatus, setPendingNextStatus] = useState('');
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  // Status Step Change Success Popup
   const [statusPopupText, setStatusPopupText] = useState('');
   const [showStatusPopup, setShowStatusPopup] = useState(false);
 
-  // DIRECT FILE PHOTOS ARRAY
   const [productFormData, setProductFormData] = useState({
-    title: '',
-    category: 'Photo Frames',
-    basePrice: '',
-    images: [],
-    description: '',
-    artisanalDetails: ''
+    title: '', category: 'Photo Frames', basePrice: '', images: [], description: '', artisanalDetails: ''
   });
 
   const [orders, setOrders] = useState([]);
@@ -77,6 +70,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     fetchProducts();
     fetchOrders();
+    fetchHighlights();
   }, []);
 
   const fetchProducts = async () => {
@@ -92,6 +86,53 @@ export default function AdminDashboard() {
       const res = await fetch(`${LIVE_BACKEND_URL}/api/orders`);
       const data = await res.json();
       setOrders(data);
+    } catch (err) {}
+  };
+
+  const fetchHighlights = async () => {
+    try {
+      const res = await fetch(`${LIVE_BACKEND_URL}/api/highlights`);
+      const data = await res.json();
+      setHighlights(data);
+    } catch (err) {}
+  };
+
+  // HIGHLIGHT PHOTO UPLOAD
+  const handleHighlightPhotoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const compressed = await compressImageFile(file);
+      setNewHighlightImage(compressed);
+    }
+  };
+
+  const handleAddHighlightSubmit = async (e) => {
+    e.preventDefault();
+    if (!newHighlightTitle || !newHighlightImage) return;
+
+    try {
+      const res = await fetch(`${LIVE_BACKEND_URL}/api/highlights`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newHighlightTitle, imageUrl: newHighlightImage })
+      });
+
+      if (res.ok) {
+        setNewHighlightTitle('');
+        setNewHighlightImage('');
+        fetchHighlights();
+        alert('Brand Highlight added successfully!');
+      }
+    } catch (err) {
+      alert('Error adding highlight.');
+    }
+  };
+
+  const handleDeleteHighlight = async (id) => {
+    if (!window.confirm('Delete this highlight bubble?')) return;
+    try {
+      await fetch(`${LIVE_BACKEND_URL}/api/highlights/${id}`, { method: 'DELETE' });
+      fetchHighlights();
     } catch (err) {}
   };
 
@@ -201,7 +242,7 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       alert('Error updating order status.');
-    } finally {
+    } fontally {
       setPendingAdvanceOrder(null);
       setPendingNextStatus('');
     }
@@ -226,12 +267,15 @@ export default function AdminDashboard() {
             <h1 className="font-serif text-3xl font-bold text-[#2b2524]">Admin Management Portal</h1>
           </div>
 
-          <div className="flex items-center bg-[#2b2524]/5 p-1 rounded-lg border border-[#b57c70]/20">
+          <div className="flex items-center bg-[#2b2524]/5 p-1 rounded-lg border border-[#b57c70]/20 flex-wrap">
             <button onClick={() => setActiveTab('products')} className={`px-4 py-2 rounded text-xs font-bold ${activeTab === 'products' ? 'bg-[#b57c70] text-white' : 'text-[#2b2524]'}`}>
               Products ({products.length})
             </button>
             <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded text-xs font-bold ${activeTab === 'orders' ? 'bg-[#b57c70] text-white' : 'text-[#2b2524]'}`}>
-              Customer Orders ({orders.length})
+              Orders ({orders.length})
+            </button>
+            <button onClick={() => setActiveTab('highlights')} className={`px-4 py-2 rounded text-xs font-bold ${activeTab === 'highlights' ? 'bg-[#b57c70] text-white' : 'text-[#2b2524]'}`}>
+              Brand Highlights ({highlights.length})
             </button>
           </div>
         </div>
@@ -384,7 +428,6 @@ export default function AdminDashboard() {
                       </p>
                     )}
 
-                    {/* ATTACHED REFERENCE PHOTOS WITH HOVER ZOOM PREVIEW */}
                     {o.attachedPhotos && o.attachedPhotos.length > 0 && (
                       <div className="pt-2 border-t border-[#b57c70]/10">
                         <p className="font-bold text-[#b57c70] text-[10px] uppercase mb-1.5 flex items-center gap-1">
@@ -418,6 +461,76 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* BRAND HIGHLIGHTS MANAGEMENT TAB */}
+        {activeTab === 'highlights' && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-2xl p-6 border border-[#b57c70]/20 shadow-sm space-y-4">
+              <h2 className="font-serif text-2xl font-bold text-[#2b2524] flex items-center gap-2">
+                <Flame className="w-5 h-5 text-amber-500 fill-current" />
+                <span>Manage Studio Brand Highlights (Homepage Reel)</span>
+              </h2>
+              <p className="text-xs text-[#2b2524]/70">
+                Add floating animated highlight story bubbles displayed between your studio name and search bar.
+              </p>
+
+              {/* Add New Highlight Form */}
+              <form onSubmit={handleAddHighlightSubmit} className="bg-[#faf6f5] p-4 rounded-xl border border-[#b57c70]/20 grid grid-cols-1 sm:grid-cols-12 gap-3 text-xs items-end">
+                <div className="sm:col-span-4">
+                  <label className="block font-bold text-[#2b2524] mb-1">Highlight Title *</label>
+                  <input
+                    type="text"
+                    required
+                    value={newHighlightTitle}
+                    onChange={(e) => setNewHighlightTitle(e.target.value)}
+                    placeholder="e.g. Bespoke Albums, Resin Frames"
+                    className="w-full p-2.5 rounded border border-[#2b2524]/20 bg-white"
+                  />
+                </div>
+
+                <div className="sm:col-span-5">
+                  <label className="block font-bold text-[#2b2524] mb-1">Highlight Image *</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleHighlightPhotoUpload}
+                      className="text-[10px] file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:bg-[#b57c70] file:text-white file:font-bold cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                <div className="sm:col-span-3">
+                  <button
+                    type="submit"
+                    className="w-full py-2.5 bg-[#b57c70] hover:bg-[#9e675b] text-white font-bold uppercase rounded shadow flex items-center justify-center gap-1.5"
+                  >
+                    <Plus className="w-4 h-4" /> Add Highlight
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* Current Highlights List */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+              {highlights.map((h) => (
+                <div key={h._id} className="bg-white p-4 rounded-xl border border-[#b57c70]/20 text-center space-y-2 shadow-sm relative group">
+                  <div className="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-[#b57c70] to-amber-400 mx-auto overflow-hidden">
+                    <img src={h.imageUrl} alt={h.title} className="w-full h-full object-cover rounded-full" />
+                  </div>
+                  <h4 className="font-serif font-bold text-xs text-[#2b2524] line-clamp-1">{h.title}</h4>
+                  <button
+                    onClick={() => handleDeleteHighlight(h._id)}
+                    className="p-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-full mx-auto flex items-center justify-center transition-colors"
+                    title="Delete Highlight"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* HOVER PREVIEW ENLARGED IMAGE CARD */}
@@ -431,9 +544,6 @@ export default function AdminDashboard() {
             alt="Enlarged Reference Preview"
             className="w-72 sm:w-80 h-72 sm:h-80 object-cover rounded-xl shadow-inner bg-[#faf6f5]"
           />
-          <p className="text-[10px] text-[#2b2524]/60 text-center mt-2 font-medium">
-            Hovering attached photo preview
-          </p>
         </div>
       )}
 
