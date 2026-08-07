@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon, CheckCircle2, Upload, ArrowRight, Check } from 'lucide-react';
+import { Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon, CheckCircle2, Upload, ArrowRight, Check, AlertCircle } from 'lucide-react';
 
 const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
-const STATUS_STEPS = ['Pending Review', 'In Production', 'Dispatched', 'Completed'];
 
 // AUTOMATIC CANVAS COMPRESSOR
 const compressImageFile = (file, maxWidth = 800, maxHeight = 800, quality = 0.7) => {
@@ -46,7 +45,12 @@ export default function AdminDashboard() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [showSaveSuccessPopup, setShowSaveSuccessPopup] = useState(false);
   
-  // Status Step Change Popup
+  // Status Step Change Confirmation Modal State
+  const [pendingAdvanceOrder, setPendingAdvanceOrder] = useState(null);
+  const [pendingNextStatus, setPendingNextStatus] = useState('');
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  // Status Step Change Success Popup
   const [statusPopupText, setStatusPopupText] = useState('');
   const [showStatusPopup, setShowStatusPopup] = useState(false);
 
@@ -164,32 +168,36 @@ export default function AdminDashboard() {
     fetchProducts();
   };
 
-  // STRICT SEQUENTIAL STEP-BY-STEP ORDER STATUS ADVANCEMENT
-  const handleAdvanceOrderStatus = async (order, nextStatus) => {
-    const currentIndex = STATUS_STEPS.indexOf(order.status || 'Pending Review');
-    const nextIndex = STATUS_STEPS.indexOf(nextStatus);
+  // OPEN CONFIRMATION MODAL BEFORE ADVANCING
+  const openConfirmAdvanceModal = (order, nextStatus) => {
+    setPendingAdvanceOrder(order);
+    setPendingNextStatus(nextStatus);
+    setShowConfirmModal(true);
+  };
 
-    // BLOCK JUMPING STEPS OR MOVING BACKWARDS
-    if (nextIndex !== currentIndex + 1) {
-      alert(`Step-by-step progress enforced! You must advance orders one step at a time (${STATUS_STEPS[currentIndex]} ➔ ${STATUS_STEPS[currentIndex + 1]}).`);
-      return;
-    }
+  // EXECUTE ADVANCE STATUS AFTER CONFIRMATION
+  const executeOrderAdvance = async () => {
+    if (!pendingAdvanceOrder || !pendingNextStatus) return;
 
     try {
-      const res = await fetch(`${LIVE_BACKEND_URL}/api/orders/${order._id}/status`, {
+      const res = await fetch(`${LIVE_BACKEND_URL}/api/orders/${pendingAdvanceOrder._id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: nextStatus })
+        body: JSON.stringify({ status: pendingNextStatus })
       });
 
       if (res.ok) {
+        setShowConfirmModal(false);
         fetchOrders();
-        setStatusPopupText(`Order ${order._id} advanced to "${nextStatus}"!`);
+        setStatusPopupText(`Order ${pendingAdvanceOrder._id} successfully advanced to "${pendingNextStatus}"!`);
         setShowStatusPopup(true);
         setTimeout(() => setShowStatusPopup(false), 2000);
       }
     } catch (err) {
       alert('Error updating order status.');
+    } finally {
+      setPendingAdvanceOrder(null);
+      setPendingNextStatus('');
     }
   };
 
@@ -284,138 +292,165 @@ export default function AdminDashboard() {
               </button>
             </div>
 
-            {orders.map((o) => {
-              const currentStepIndex = STATUS_STEPS.indexOf(o.status || 'Pending Review');
-
-              return (
-                <div key={o._id} className="bg-white rounded-xl border border-[#b57c70]/20 p-5 shadow-sm space-y-4">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3">
-                    <div>
-                      <span className="font-bold text-xs text-[#2b2524]">Order ID: {o._id}</span>
-                      <span className="ml-2 font-semibold text-xs text-[#b57c70] bg-[#f5ebe8] px-2.5 py-0.5 rounded">
-                        {o.productTitle} (x{o.quantity || 1})
-                      </span>
-                    </div>
-
-                    {/* STRICT STEP-BY-STEP CONTROL */}
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded">
-                        {o.paymentStatus || 'Paid Online'} (₹{o.totalAmount})
-                      </span>
-
-                      {/* Dropdown with Restricted Backwards & Skip Steps */}
-                      <select
-                        value={o.status || 'Pending Review'}
-                        onChange={(e) => handleAdvanceOrderStatus(o, e.target.value)}
-                        disabled={o.status === 'Completed'}
-                        className="text-xs font-bold px-3 py-1 rounded-full border bg-[#faf6f5] text-[#2b2524] cursor-pointer disabled:opacity-80"
-                      >
-                        <option value="Pending Review" disabled={currentStepIndex > 0}>
-                          1. Pending Review
-                        </option>
-                        <option value="In Production" disabled={currentStepIndex !== 0 && currentStepIndex !== 1}>
-                          2. In Production
-                        </option>
-                        <option value="Dispatched" disabled={currentStepIndex !== 1 && currentStepIndex !== 2}>
-                          3. Dispatched
-                        </option>
-                        <option value="Completed" disabled={currentStepIndex !== 2 && currentStepIndex !== 3}>
-                          4. Completed ✓
-                        </option>
-                      </select>
-
-                      {/* ONE-CLICK NEXT STAGE BUTTON */}
-                      {o.status === 'Pending Review' && (
-                        <button
-                          onClick={() => handleAdvanceOrderStatus(o, 'In Production')}
-                          className="px-3 py-1 bg-[#b57c70] text-white font-bold text-[11px] rounded-full shadow hover:bg-[#9e675b] transition-all flex items-center gap-1"
-                        >
-                          <span>Start Production</span> <ArrowRight className="w-3 h-3" />
-                        </button>
-                      )}
-
-                      {o.status === 'In Production' && (
-                        <button
-                          onClick={() => handleAdvanceOrderStatus(o, 'Dispatched')}
-                          className="px-3 py-1 bg-blue-600 text-white font-bold text-[11px] rounded-full shadow hover:bg-blue-700 transition-all flex items-center gap-1"
-                        >
-                          <span>Dispatch Order</span> <ArrowRight className="w-3 h-3" />
-                        </button>
-                      )}
-
-                      {o.status === 'Dispatched' && (
-                        <button
-                          onClick={() => handleAdvanceOrderStatus(o, 'Completed')}
-                          className="px-3 py-1 bg-emerald-600 text-white font-bold text-[11px] rounded-full shadow hover:bg-emerald-700 transition-all flex items-center gap-1"
-                        >
-                          <span>Mark Completed</span> <Check className="w-3 h-3 stroke-[3]" />
-                        </button>
-                      )}
-
-                      {o.status === 'Completed' && (
-                        <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-bold text-[11px] rounded-full flex items-center gap-1">
-                          ✓ Order Completed
-                        </span>
-                      )}
-                    </div>
+            {orders.map((o) => (
+              <div key={o._id} className="bg-white rounded-xl border border-[#b57c70]/20 p-5 shadow-sm space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b pb-3">
+                  <div>
+                    <span className="font-bold text-xs text-[#2b2524]">Order ID: {o._id}</span>
+                    <span className="ml-2 font-semibold text-xs text-[#b57c70] bg-[#f5ebe8] px-2.5 py-0.5 rounded">
+                      {o.productTitle} (x{o.quantity || 1})
+                    </span>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-12 gap-4 text-xs">
-                    <div className="md:col-span-5 bg-[#faf6f5] p-3.5 rounded-lg space-y-1">
-                      <p className="font-bold text-[#2b2524]">{o.customerName}</p>
-                      <p className="text-[#b57c70]">{o.customerEmail}</p>
-                      <p className="text-[#2b2524]/80 flex items-center gap-1 pt-1">
-                        <Phone className="w-3 h-3 text-[#b57c70]" /> Phone: {o.contactNumber || 'N/A'}
-                      </p>
-                      {o.address && (
-                        <p className="text-[#2b2524]/80 flex items-start gap-1 pt-1">
-                          <MapPin className="w-3.5 h-3.5 text-[#b57c70] flex-shrink-0 mt-0.5" />
-                          <span>{o.address.houseNo}, {o.address.street}, {o.address.city}, {o.address.state} - {o.address.pincode} ({o.address.country || 'India'})</span>
-                        </p>
-                      )}
-                    </div>
+                  {/* SINGLE ACTION BUTTON (DROPDOWN REMOVED) */}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded">
+                      {o.paymentStatus || 'Paid Online'} (₹{o.totalAmount})
+                    </span>
 
-                    <div className="md:col-span-7 bg-[#f5ebe8]/40 p-3.5 rounded-lg space-y-1">
-                      <p className="font-bold text-[#2b2524] text-[10px] uppercase tracking-wider flex items-center gap-1">
-                        <Type className="w-3.5 h-3.5 text-[#b57c70]" /> Customer Idea & Requirements:
-                      </p>
-                      
-                      <p className="text-[#2b2524]/90 leading-relaxed italic bg-white p-2 rounded border border-[#b57c70]/10">
-                        "{o.customizationDetails}"
-                      </p>
+                    {/* Step 1 ➔ Step 2 */}
+                    {(!o.status || o.status === 'Pending Review') && (
+                      <button
+                        type="button"
+                        onClick={() => openConfirmAdvanceModal(o, 'In Production')}
+                        className="px-3.5 py-1.5 bg-[#b57c70] hover:bg-[#9e675b] text-white font-bold text-xs rounded-full shadow transition-all flex items-center gap-1.5"
+                      >
+                        <span>Start Production</span> <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
 
-                      {o.photoDriveLinks && (
-                        <p className="text-[#2b2524] flex items-center gap-1 truncate pt-1">
-                          <strong>Reference Link:</strong>
-                          <a href={o.photoDriveLinks} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline flex items-center gap-1">
-                            <LinkIcon className="w-3 h-3" /> Open Link
-                          </a>
-                        </p>
-                      )}
+                    {/* Step 2 ➔ Step 3 */}
+                    {o.status === 'In Production' && (
+                      <button
+                        type="button"
+                        onClick={() => openConfirmAdvanceModal(o, 'Dispatched')}
+                        className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-full shadow transition-all flex items-center gap-1.5"
+                      >
+                        <span>Dispatch Order</span> <ArrowRight className="w-3.5 h-3.5" />
+                      </button>
+                    )}
 
-                      {o.attachedPhotos && o.attachedPhotos.length > 0 && (
-                        <div className="pt-2 border-t border-[#b57c70]/10">
-                          <p className="font-bold text-[#b57c70] text-[10px] uppercase mb-1 flex items-center gap-1">
-                            <ImageIcon className="w-3 h-3" /> Attached Reference Photos ({o.attachedPhotos.length}):
-                          </p>
-                          <div className="flex gap-2 overflow-x-auto">
-                            {o.attachedPhotos.map((imgData, idx) => (
-                              <a key={idx} href={imgData} target="_blank" rel="noopener noreferrer">
-                                <img src={imgData} alt="Reference Upload" className="w-14 h-14 object-cover rounded border border-[#b57c70]/30 shadow-sm hover:scale-105 transition-transform cursor-pointer" />
-                              </a>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                    {/* Step 3 ➔ Step 4 */}
+                    {o.status === 'Dispatched' && (
+                      <button
+                        type="button"
+                        onClick={() => openConfirmAdvanceModal(o, 'Completed')}
+                        className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-full shadow transition-all flex items-center gap-1.5"
+                      >
+                        <span>Mark Completed</span> <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      </button>
+                    )}
+
+                    {/* Final Step */}
+                    {o.status === 'Completed' && (
+                      <span className="px-3 py-1 bg-emerald-100 text-emerald-800 font-bold text-xs rounded-full flex items-center gap-1">
+                        ✓ Order Completed
+                      </span>
+                    )}
                   </div>
                 </div>
-              );
-            })}
+
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-4 text-xs">
+                  <div className="md:col-span-5 bg-[#faf6f5] p-3.5 rounded-lg space-y-1">
+                    <p className="font-bold text-[#2b2524]">{o.customerName}</p>
+                    <p className="text-[#b57c70]">{o.customerEmail}</p>
+                    <p className="text-[#2b2524]/80 flex items-center gap-1 pt-1">
+                      <Phone className="w-3 h-3 text-[#b57c70]" /> Phone: {o.contactNumber || 'N/A'}
+                    </p>
+                    {o.address && (
+                      <p className="text-[#2b2524]/80 flex items-start gap-1 pt-1">
+                        <MapPin className="w-3.5 h-3.5 text-[#b57c70] flex-shrink-0 mt-0.5" />
+                        <span>{o.address.houseNo}, {o.address.street}, {o.address.city}, {o.address.state} - {o.address.pincode} ({o.address.country || 'India'})</span>
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="md:col-span-7 bg-[#f5ebe8]/40 p-3.5 rounded-lg space-y-1">
+                    <p className="font-bold text-[#2b2524] text-[10px] uppercase tracking-wider flex items-center gap-1">
+                      <Type className="w-3.5 h-3.5 text-[#b57c70]" /> Customer Idea & Requirements:
+                    </p>
+                    <p className="text-[#2b2524]/90 leading-relaxed italic bg-white p-2 rounded border border-[#b57c70]/10">
+                      "{o.customizationDetails}"
+                    </p>
+
+                    {o.photoDriveLinks && (
+                      <p className="text-[#2b2524] flex items-center gap-1 truncate pt-1">
+                        <strong>Reference Link:</strong>
+                        <a href={o.photoDriveLinks} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline flex items-center gap-1">
+                          <LinkIcon className="w-3 h-3" /> Open Link
+                        </a>
+                      </p>
+                    )}
+
+                    {o.attachedPhotos && o.attachedPhotos.length > 0 && (
+                      <div className="pt-2 border-t border-[#b57c70]/10">
+                        <p className="font-bold text-[#b57c70] text-[10px] uppercase mb-1 flex items-center gap-1">
+                          <ImageIcon className="w-3 h-3" /> Attached Reference Photos ({o.attachedPhotos.length}):
+                        </p>
+                        <div className="flex gap-2 overflow-x-auto">
+                          {o.attachedPhotos.map((imgData, idx) => (
+                            <a key={idx} href={imgData} target="_blank" rel="noopener noreferrer">
+                              <img src={imgData} alt="Reference Upload" className="w-14 h-14 object-cover rounded border border-[#b57c70]/30 shadow-sm hover:scale-105 transition-transform cursor-pointer" />
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
       </div>
+
+      {/* STEP ADVANCE CONFIRMATION POP-UP MODAL */}
+      {showConfirmModal && pendingAdvanceOrder && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 text-center space-y-4 shadow-2xl border border-[#b57c70]/30 animate-in fade-in">
+            <div className="w-14 h-14 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mx-auto shadow">
+              <AlertCircle className="w-8 h-8" />
+            </div>
+
+            <h3 className="font-serif text-xl font-bold text-[#2b2524]">Advance Order Status?</h3>
+            
+            <div className="bg-[#faf6f5] p-3.5 rounded-xl border border-[#b57c70]/15 text-xs text-[#2b2524]/80 space-y-2 text-left">
+              <p className="font-bold text-[#2b2524]">
+                Order ID: <span className="font-mono text-[#b57c70]">{pendingAdvanceOrder._id}</span>
+              </p>
+              <p>Product: <strong>{pendingAdvanceOrder.productTitle}</strong></p>
+              <p>Customer: <strong>{pendingAdvanceOrder.customerName}</strong></p>
+              <div className="pt-2 border-t font-bold text-xs flex items-center justify-between">
+                <span className="text-[#2b2524]/60">{pendingAdvanceOrder.status || 'Pending Review'}</span>
+                <span className="text-[#b57c70]">➔ {pendingNextStatus}</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-rose-700 font-semibold bg-rose-50 p-2 rounded">
+              ⚠️ Note: Once advanced, you cannot move backwards to previous steps.
+            </p>
+
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowConfirmModal(false)}
+                className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-[#2b2524] text-xs font-bold uppercase rounded-md transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={executeOrderAdvance}
+                className="flex-1 py-2.5 bg-[#b57c70] hover:bg-[#9e675b] text-white text-xs font-bold uppercase tracking-wider rounded-md shadow transition-all flex items-center justify-center gap-1.5"
+              >
+                <span>Confirm & Advance</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* EDIT / ADD PRODUCT MODAL */}
       {showProductModal && (
@@ -539,7 +574,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* STATUS ADVANCED POP-UP MODAL */}
+      {/* STATUS ADVANCED SUCCESS POP-UP MODAL */}
       {showStatusPopup && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-[#b57c70]/30 animate-in fade-in">
