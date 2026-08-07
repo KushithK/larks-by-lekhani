@@ -52,7 +52,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h4 className="font-bold text-[#2b2524]">Studio Location</h4>
-                    <p className="text-[#2b2524]/70 mt-0.5">Larks Creative House, Uppinangady, Mangalore, Karnataka, India</p>
+                    <p className="text-[#2b2524]/70 mt-0.5"> Uppinangady, Mangalore, Karnataka, India</p>
                   </div>
                 </div>
 
