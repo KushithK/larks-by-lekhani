@@ -11,14 +11,18 @@ const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 const YOUR_REAL_UPI_ID = "larksbylekhani@upi";
 const STUDIO_BUSINESS_NAME = "Larks by Lekhani";
 
-// FAIL-SAFE CATALOG
+// FALLBACK MULTI-PHOTO CATALOG
 const FALLBACK_CATALOG = [
   {
     _id: "1",
     title: "Birthday Story Mini Memory Album",
     basePrice: 499,
     category: "Gift Albums",
-    images: ["https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop"],
+    images: [
+      "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=800&auto=format&fit=crop"
+    ],
     description: "A compact handcrafted birthday memory album book with interactive flip tabs, pull-out photo sleeves, and cute birthday prompts."
   },
   {
@@ -26,7 +30,10 @@ const FALLBACK_CATALOG = [
     title: "Handcrafted Floral Resin Keychain",
     basePrice: 149,
     category: "Keychains",
-    images: ["https://images.unsplash.com/photo-1611591475171-d41c10d32cb5?q=80&w=800&auto=format&fit=crop"],
+    images: [
+      "https://images.unsplash.com/photo-1611591475171-d41c10d32cb5?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800&auto=format&fit=crop"
+    ],
     description: "Charming small gift keychain featuring real pressed dried flowers, subtle foil accents, and a durable antique brass ring."
   },
   {
@@ -34,7 +41,10 @@ const FALLBACK_CATALOG = [
     title: "Sweet Bird Gift Hamper Box",
     basePrice: 999,
     category: "Gift Boxes",
-    images: ["https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop"],
+    images: [
+      "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1513885535751-8b9238bd454a?q=80&w=800&auto=format&fit=crop"
+    ],
     description: "A delightful small bird-themed gift box curated with ribbon, a dainty necklace, custom keychain, sticker pack, hair clips, earrings, and a face mask."
   },
   {
@@ -66,7 +76,11 @@ const FALLBACK_CATALOG = [
     title: "Custom Die-Cast Car Display Frame",
     basePrice: 899,
     category: "Photo Frames",
-    images: ["https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=800&auto=format&fit=crop"],
+    images: [
+      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1582562124811-c09040d0a901?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"
+    ],
     description: "Bespoke 3D shadow box frame designed specifically to display your favorite die-cast model car with custom background graphics."
   },
   {
@@ -74,7 +88,10 @@ const FALLBACK_CATALOG = [
     title: "Heartmade Custom Memory Frame",
     basePrice: 649,
     category: "Photo Frames",
-    images: ["https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"],
+    images: [
+      "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop",
+      "https://images.unsplash.com/photo-1582562124811-c09040d0a901?q=80&w=800&auto=format&fit=crop"
+    ],
     description: "Handmade wooden memory photo frame customized with your favorite photographs, dried botanicals, and personalized names."
   }
 ];
@@ -155,12 +172,20 @@ export default function ProductDetailPage() {
       const response = await fetch(`${LIVE_BACKEND_URL}/api/products/${id}`);
       if (response.ok) {
         const data = await response.json();
-        setProduct(data);
+        
+        let parsedImgs = [];
+        if (Array.isArray(data.images)) {
+          parsedImgs = data.images;
+        } else if (typeof data.images === 'string') {
+          parsedImgs = data.images.split(',').map(s=>s.trim()).filter(Boolean);
+        }
+
+        setProduct({ ...data, images: parsedImgs });
         setLoading(false);
         return;
       }
     } catch (err) {
-      console.error('Fetching from live backend...', err);
+      console.error('Fetching error:', err);
     }
 
     const matched = FALLBACK_CATALOG.find(p => p._id === String(id)) || FALLBACK_CATALOG[0];
@@ -168,14 +193,23 @@ export default function ProductDetailPage() {
     setLoading(false);
   };
 
+  const getProductImageList = () => {
+    if (!product) return [];
+    if (Array.isArray(product.images) && product.images.length > 0) return product.images;
+    if (typeof product.images === 'string' && product.images.length > 0) return product.images.split(',').map(s=>s.trim()).filter(Boolean);
+    return ['https://via.placeholder.com/600'];
+  };
+
+  const productImages = getProductImageList();
+
   const nextImage = () => {
-    if (!product || !product.images) return;
-    setCurrentImageIndex((prev) => (prev + 1) % product.images.length);
+    if (productImages.length <= 1) return;
+    setCurrentImageIndex((prev) => (prev + 1) % productImages.length);
   };
 
   const prevImage = () => {
-    if (!product || !product.images) return;
-    setCurrentImageIndex((prev) => (prev - 1 + product.images.length) % product.images.length);
+    if (productImages.length <= 1) return;
+    setCurrentImageIndex((prev) => (prev - 1 + productImages.length) % productImages.length);
   };
 
   const handleInputChange = (e) => {
@@ -405,28 +439,39 @@ export default function ProductDetailPage() {
             </div>
           </div>
         ) : (
-          /* PRODUCT DETAIL & SLIDER */
+          /* PRODUCT DETAIL & MULTI-PHOTO SLIDER WITH THUMBNAIL STRIP */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
             
             <div className="lg:col-span-5 space-y-4">
+              {/* Main Image View */}
               <div className="aspect-square bg-white rounded-2xl overflow-hidden border border-[#b57c70]/20 shadow-sm relative group">
                 <img
-                  src={product.images && product.images[currentImageIndex] ? product.images[currentImageIndex] : 'https://via.placeholder.com/600'}
+                  src={productImages[currentImageIndex] || 'https://via.placeholder.com/600'}
                   alt={product.title}
                   className="w-full h-full object-cover transition-all duration-300"
                 />
 
-                {product.images && product.images.length > 1 && (
+                {/* Photo Badge */}
+                {productImages.length > 1 && (
+                  <span className="absolute top-3 right-3 bg-black/70 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow backdrop-blur-sm">
+                    {currentImageIndex + 1} / {productImages.length} Photos
+                  </span>
+                )}
+
+                {/* Left/Right Arrows */}
+                {productImages.length > 1 && (
                   <>
                     <button
                       onClick={prevImage}
                       className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white text-[#2b2524] shadow-md transition-all"
+                      title="Previous photo"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                       onClick={nextImage}
                       className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white text-[#2b2524] shadow-md transition-all"
+                      title="Next photo"
                     >
                       <ChevronRight className="w-5 h-5" />
                     </button>
@@ -434,17 +479,27 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              {product.images && product.images.length > 1 && (
-                <div className="flex justify-center items-center gap-2 pt-1">
-                  {product.images.map((_, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setCurrentImageIndex(idx)}
-                      className={`h-2.5 rounded-full transition-all ${
-                        currentImageIndex === idx ? 'w-8 bg-[#b57c70]' : 'w-2.5 bg-[#b57c70]/30 hover:bg-[#b57c70]/60'
-                      }`}
-                    />
-                  ))}
+              {/* MULTI-PHOTO THUMBNAIL STRIP (SLIDE/CLICK UP TO 10 PHOTOS) */}
+              {productImages.length > 1 && (
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase text-[#b57c70]">
+                    Click Photo to View ({productImages.length} Available):
+                  </span>
+                  <div className="flex gap-2.5 overflow-x-auto pb-2 pt-1">
+                    {productImages.map((imgUrl, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setCurrentImageIndex(idx)}
+                        className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all flex-shrink-0 relative ${
+                          currentImageIndex === idx 
+                            ? 'border-[#b57c70] scale-95 shadow-md ring-2 ring-[#b57c70]/30' 
+                            : 'border-transparent opacity-60 hover:opacity-100'
+                        }`}
+                      >
+                        <img src={imgUrl} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -485,7 +540,7 @@ export default function ProductDetailPage() {
                 {product.description}
               </p>
 
-              {/* Quantity Counter & Buttons (Option Selector Removed) */}
+              {/* Quantity Counter & Buttons */}
               <div className="space-y-4 pt-2">
                 <div className="flex items-center gap-4">
                   <label className="text-xs font-bold uppercase text-[#2b2524]">Quantity:</label>
