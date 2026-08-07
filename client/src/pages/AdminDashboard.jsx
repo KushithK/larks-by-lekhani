@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon } from 'lucide-react';
+import { Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
 
 const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 
@@ -8,6 +8,7 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showProductModal, setShowProductModal] = useState(false);
+  const [showSaveSuccessPopup, setShowSaveSuccessPopup] = useState(false); // Success Pop-up State
   
   const [productFormData, setProductFormData] = useState({
     title: '', category: 'Sparkbooks', basePrice: '', images: '', description: '', artisanalDetails: ''
@@ -55,19 +56,32 @@ export default function AdminDashboard() {
     setShowProductModal(true);
   };
 
+  // HANDLE SAVE PRODUCT WITH "SUCCESSFULLY SAVED" POP-UP
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     const url = editingProduct ? `${LIVE_BACKEND_URL}/api/products/${editingProduct._id}` : `${LIVE_BACKEND_URL}/api/products`;
     const method = editingProduct ? 'PUT' : 'POST';
 
-    await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(productFormData)
-    });
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(productFormData)
+      });
 
-    setShowProductModal(false);
-    fetchProducts();
+      if (res.ok) {
+        setShowProductModal(false);
+        fetchProducts();
+        setShowSaveSuccessPopup(true); // SHOW "SUCCESSFULLY SAVED" POPUP
+
+        // Auto-close popup after 2 seconds
+        setTimeout(() => {
+          setShowSaveSuccessPopup(false);
+        }, 2000);
+      }
+    } catch (err) {
+      alert('Error saving product details.');
+    }
   };
 
   const handleDeleteProduct = async (id) => {
@@ -173,6 +187,7 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4 text-xs">
+                  {/* Delivery Address */}
                   <div className="md:col-span-5 bg-[#faf6f5] p-3.5 rounded-lg space-y-1">
                     <p className="font-bold text-[#2b2524]">{o.customerName}</p>
                     <p className="text-[#b57c70]">{o.customerEmail}</p>
@@ -187,10 +202,12 @@ export default function AdminDashboard() {
                     )}
                   </div>
 
+                  {/* Customer Idea & Reference Photos */}
                   <div className="md:col-span-7 bg-[#f5ebe8]/40 p-3.5 rounded-lg space-y-1">
                     <p className="font-bold text-[#2b2524] text-[10px] uppercase tracking-wider flex items-center gap-1">
                       <Type className="w-3.5 h-3.5 text-[#b57c70]" /> Customer Idea & Requirements:
                     </p>
+                    
                     <p className="text-[#2b2524]/90 leading-relaxed italic bg-white p-2 rounded border border-[#b57c70]/10">
                       "{o.customizationDetails}"
                     </p>
@@ -204,6 +221,7 @@ export default function AdminDashboard() {
                       </p>
                     )}
 
+                    {/* ATTACHED CUSTOMER REFERENCE PHOTOS */}
                     {o.attachedPhotos && o.attachedPhotos.length > 0 && (
                       <div className="pt-2 border-t border-[#b57c70]/10">
                         <p className="font-bold text-[#b57c70] text-[10px] uppercase mb-1 flex items-center gap-1">
@@ -227,31 +245,63 @@ export default function AdminDashboard() {
 
       </div>
 
+      {/* EDIT / ADD PRODUCT MODAL */}
       {showProductModal && (
-        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl max-w-xl w-full p-6 border border-[#b57c70]/30">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl max-w-xl w-full p-6 border border-[#b57c70]/30 shadow-2xl">
             <div className="flex justify-between items-center border-b pb-3 mb-4">
               <h3 className="font-serif text-lg font-bold text-[#2b2524]">{editingProduct ? 'Update Product' : 'Add Item'}</h3>
               <button onClick={() => setShowProductModal(false)}><X className="w-5 h-5" /></button>
             </div>
             <form onSubmit={handleSaveProduct} className="space-y-4 text-xs">
-              <input type="text" required value={productFormData.title} onChange={(e) => setProductFormData({ ...productFormData, title: e.target.value })} placeholder="Title" className="w-full p-2 border rounded" />
+              <input type="text" required value={productFormData.title} onChange={(e) => setProductFormData({ ...productFormData, title: e.target.value })} placeholder="Title" className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]" />
               <div className="grid grid-cols-2 gap-4">
-                <select value={productFormData.category} onChange={(e) => setProductFormData({ ...productFormData, category: e.target.value })} className="w-full p-2 border rounded">
+                <select value={productFormData.category} onChange={(e) => setProductFormData({ ...productFormData, category: e.target.value })} className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]">
                   <option value="Sparkbooks">Sparkbooks</option>
                   <option value="Gift Albums">Gift Albums</option>
-                  <option value="Photo Frames">Photo Frames</option>
                   <option value="Keychains">Keychains</option>
+                  <option value="Gift Boxes">Gift Boxes</option>
+                  <option value="Gift Cards">Gift Cards</option>
+                  <option value="Cards & Keepsakes">Cards & Keepsakes</option>
+                  <option value="Crochet & Crafts">Crochet & Crafts</option>
+                  <option value="Photo Frames">Photo Frames</option>
                 </select>
-                <input type="number" required value={productFormData.basePrice} onChange={(e) => setProductFormData({ ...productFormData, basePrice: e.target.value })} placeholder="Price (₹)" className="w-full p-2 border rounded" />
+                <input type="number" required value={productFormData.basePrice} onChange={(e) => setProductFormData({ ...productFormData, basePrice: e.target.value })} placeholder="Price (₹)" className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]" />
               </div>
-              <input type="text" value={productFormData.images} onChange={(e) => setProductFormData({ ...productFormData, images: e.target.value })} placeholder="Image URLs (comma-separated)" className="w-full p-2 border rounded" />
-              <textarea required rows={3} value={productFormData.description} onChange={(e) => setProductFormData({ ...productFormData, description: e.target.value })} placeholder="Description" className="w-full p-2 border rounded"></textarea>
-              <button type="submit" className="w-full py-2 bg-[#b57c70] text-white font-bold rounded">Save Item</button>
+              <input type="text" value={productFormData.images} onChange={(e) => setProductFormData({ ...productFormData, images: e.target.value })} placeholder="Image URLs (comma-separated)" className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]" />
+              <textarea required rows={3} value={productFormData.description} onChange={(e) => setProductFormData({ ...productFormData, description: e.target.value })} placeholder="Description" className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]"></textarea>
+              <button type="submit" className="w-full py-3 bg-[#b57c70] text-white font-bold uppercase rounded shadow hover:bg-[#9e675b] transition-all">
+                Save Item Details
+              </button>
             </form>
           </div>
         </div>
       )}
+
+      {/* SUCCESSFULLY SAVED POP-UP MODAL */}
+      {showSaveSuccessPopup && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-[#b57c70]/30 animate-in fade-in">
+            <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+
+            <h3 className="font-serif text-xl font-bold text-[#2b2524]">Successfully Saved!</h3>
+            <p className="text-xs text-[#2b2524]/80 leading-relaxed font-medium">
+              Product details have been successfully updated in your studio inventory.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setShowSaveSuccessPopup(false)}
+              className="w-full py-2.5 bg-[#b57c70] hover:bg-[#9e675b] text-white text-xs font-bold uppercase rounded-md shadow transition-all"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
