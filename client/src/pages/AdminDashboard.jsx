@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon, CheckCircle2 } from 'lucide-react';
+import { Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon, CheckCircle2, Upload } from 'lucide-react';
 
 const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 
@@ -8,10 +8,10 @@ export default function AdminDashboard() {
   const [products, setProducts] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showProductModal, setShowProductModal] = useState(false);
-  const [showSaveSuccessPopup, setShowSaveSuccessPopup] = useState(false); // Success Pop-up State
+  const [showSaveSuccessPopup, setShowSaveSuccessPopup] = useState(false);
   
   const [productFormData, setProductFormData] = useState({
-    title: '', category: 'Sparkbooks', basePrice: '', images: '', description: '', artisanalDetails: ''
+    title: '', category: 'Photo Frames', basePrice: '', images: '', description: '', artisanalDetails: ''
   });
 
   const [orders, setOrders] = useState([]);
@@ -39,7 +39,7 @@ export default function AdminDashboard() {
 
   const openAddModal = () => {
     setEditingProduct(null);
-    setProductFormData({ title: '', category: 'Sparkbooks', basePrice: '', images: '', description: '', artisanalDetails: '' });
+    setProductFormData({ title: '', category: 'Photo Frames', basePrice: '', images: '', description: '', artisanalDetails: '' });
     setShowProductModal(true);
   };
 
@@ -56,7 +56,28 @@ export default function AdminDashboard() {
     setShowProductModal(true);
   };
 
-  // HANDLE SAVE PRODUCT WITH "SUCCESSFULLY SAVED" POP-UP
+  // MULTIPLE PRODUCT PHOTOS UPLOAD HANDLER
+  const handleProductPhotoFileUpload = (e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setProductFormData(prev => {
+          const currentImages = prev.images ? prev.images.split(',').map(s=>s.trim()).filter(Boolean) : [];
+          const newImagesList = [...currentImages, reader.result].join(', ');
+          return { ...prev, images: newImagesList };
+        });
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
+  const handleRemoveProductPhoto = (indexToRemove) => {
+    const currentImages = productFormData.images ? productFormData.images.split(',').map(s=>s.trim()).filter(Boolean) : [];
+    const filtered = currentImages.filter((_, idx) => idx !== indexToRemove).join(', ');
+    setProductFormData({ ...productFormData, images: filtered });
+  };
+
   const handleSaveProduct = async (e) => {
     e.preventDefault();
     const url = editingProduct ? `${LIVE_BACKEND_URL}/api/products/${editingProduct._id}` : `${LIVE_BACKEND_URL}/api/products`;
@@ -72,9 +93,8 @@ export default function AdminDashboard() {
       if (res.ok) {
         setShowProductModal(false);
         fetchProducts();
-        setShowSaveSuccessPopup(true); // SHOW "SUCCESSFULLY SAVED" POPUP
+        setShowSaveSuccessPopup(true);
 
-        // Auto-close popup after 2 seconds
         setTimeout(() => {
           setShowSaveSuccessPopup(false);
         }, 2000);
@@ -97,6 +117,12 @@ export default function AdminDashboard() {
       body: JSON.stringify({ status: newStatus })
     });
     fetchOrders();
+  };
+
+  const getImageList = (imagesData) => {
+    if (Array.isArray(imagesData)) return imagesData;
+    if (typeof imagesData === 'string') return imagesData.split(',').map(s=>s.trim()).filter(Boolean);
+    return [];
   };
 
   return (
@@ -126,30 +152,50 @@ export default function AdminDashboard() {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="font-serif text-xl font-semibold text-[#2b2524]">Catalog Inventory</h2>
-              <button onClick={openAddModal} className="px-4 py-2 bg-[#2b2524] text-white rounded text-xs font-semibold flex items-center gap-2">
+              <button onClick={openAddModal} className="px-4 py-2 bg-[#2b2524] text-white rounded text-xs font-semibold flex items-center gap-2 shadow">
                 <Plus className="w-4 h-4" /> Add Item
               </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {products.map((p) => (
-                <div key={p._id} className="bg-white rounded-lg border border-[#b57c70]/20 p-5 shadow-sm flex flex-col justify-between">
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-[#b57c70] bg-[#f5ebe8] px-2 py-0.5 rounded">{p.category}</span>
-                    <h3 className="font-serif font-semibold text-base text-[#2b2524] mt-2">{p.title}</h3>
-                    <p className="text-xs text-[#2b2524]/70 mt-1 line-clamp-2">{p.description}</p>
-                    <p className="text-sm font-bold text-[#2b2524] mt-3">₹{p.basePrice}</p>
+              {products.map((p) => {
+                const imgList = getImageList(p.images);
+
+                return (
+                  <div key={p._id} className="bg-white rounded-xl border border-[#b57c70]/20 p-5 shadow-sm flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <span className="text-[10px] uppercase font-bold text-[#b57c70] bg-[#f5ebe8] px-2 py-0.5 rounded">
+                          {p.category}
+                        </span>
+                        <span className="text-[10px] text-[#2b2524]/60 font-semibold">
+                          {imgList.length} Photos
+                        </span>
+                      </div>
+
+                      {/* Cover Photo Preview */}
+                      {imgList.length > 0 && (
+                        <div className="aspect-video w-full rounded-lg overflow-hidden bg-[#faf6f5] mb-3 border border-[#2b2524]/5">
+                          <img src={imgList[0]} alt={p.title} className="w-full h-full object-cover" />
+                        </div>
+                      )}
+
+                      <h3 className="font-serif font-semibold text-base text-[#2b2524] line-clamp-1">{p.title}</h3>
+                      <p className="text-xs text-[#2b2524]/70 mt-1 line-clamp-2">{p.description}</p>
+                      <p className="text-sm font-bold text-[#b57c70] mt-3">₹{p.basePrice}.00</p>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-[#2b2524]/10 flex justify-end gap-2">
+                      <button onClick={() => openEditModal(p)} className="p-2 text-xs font-semibold text-[#2b2524] hover:bg-[#f5ebe8] rounded flex items-center gap-1 transition-colors">
+                        <Edit3 className="w-3.5 h-3.5 text-[#b57c70]" /> Update
+                      </button>
+                      <button onClick={() => handleDeleteProduct(p._id)} className="p-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded flex items-center gap-1 transition-colors">
+                        <Trash2 className="w-3.5 h-3.5" /> Delete
+                      </button>
+                    </div>
                   </div>
-                  <div className="mt-4 pt-3 border-t border-[#2b2524]/10 flex justify-end gap-2">
-                    <button onClick={() => openEditModal(p)} className="p-2 text-xs font-semibold text-[#2b2524] hover:bg-[#f5ebe8] rounded flex items-center gap-1">
-                      <Edit3 className="w-3.5 h-3.5 text-[#b57c70]" /> Update
-                    </button>
-                    <button onClick={() => handleDeleteProduct(p._id)} className="p-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded flex items-center gap-1">
-                      <Trash2 className="w-3.5 h-3.5" /> Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
@@ -187,7 +233,6 @@ export default function AdminDashboard() {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-12 gap-4 text-xs">
-                  {/* Delivery Address */}
                   <div className="md:col-span-5 bg-[#faf6f5] p-3.5 rounded-lg space-y-1">
                     <p className="font-bold text-[#2b2524]">{o.customerName}</p>
                     <p className="text-[#b57c70]">{o.customerEmail}</p>
@@ -202,12 +247,10 @@ export default function AdminDashboard() {
                     )}
                   </div>
 
-                  {/* Customer Idea & Reference Photos */}
                   <div className="md:col-span-7 bg-[#f5ebe8]/40 p-3.5 rounded-lg space-y-1">
                     <p className="font-bold text-[#2b2524] text-[10px] uppercase tracking-wider flex items-center gap-1">
                       <Type className="w-3.5 h-3.5 text-[#b57c70]" /> Customer Idea & Requirements:
                     </p>
-                    
                     <p className="text-[#2b2524]/90 leading-relaxed italic bg-white p-2 rounded border border-[#b57c70]/10">
                       "{o.customizationDetails}"
                     </p>
@@ -221,7 +264,6 @@ export default function AdminDashboard() {
                       </p>
                     )}
 
-                    {/* ATTACHED CUSTOMER REFERENCE PHOTOS */}
                     {o.attachedPhotos && o.attachedPhotos.length > 0 && (
                       <div className="pt-2 border-t border-[#b57c70]/10">
                         <p className="font-bold text-[#b57c70] text-[10px] uppercase mb-1 flex items-center gap-1">
@@ -245,33 +287,104 @@ export default function AdminDashboard() {
 
       </div>
 
-      {/* EDIT / ADD PRODUCT MODAL */}
+      {/* EDIT / ADD PRODUCT MODAL WITH DIRECT PHOTO FILE PICKER */}
       {showProductModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl max-w-xl w-full p-6 border border-[#b57c70]/30 shadow-2xl">
+          <div className="bg-white rounded-xl max-w-xl w-full p-6 border border-[#b57c70]/30 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b pb-3 mb-4">
-              <h3 className="font-serif text-lg font-bold text-[#2b2524]">{editingProduct ? 'Update Product' : 'Add Item'}</h3>
+              <h3 className="font-serif text-lg font-bold text-[#2b2524]">{editingProduct ? 'Update Product' : 'Add New Item'}</h3>
               <button onClick={() => setShowProductModal(false)}><X className="w-5 h-5" /></button>
             </div>
+            
             <form onSubmit={handleSaveProduct} className="space-y-4 text-xs">
-              <input type="text" required value={productFormData.title} onChange={(e) => setProductFormData({ ...productFormData, title: e.target.value })} placeholder="Title" className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]" />
-              <div className="grid grid-cols-2 gap-4">
-                <select value={productFormData.category} onChange={(e) => setProductFormData({ ...productFormData, category: e.target.value })} className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]">
-                  <option value="Sparkbooks">Sparkbooks</option>
-                  <option value="Gift Albums">Gift Albums</option>
-                  <option value="Keychains">Keychains</option>
-                  <option value="Gift Boxes">Gift Boxes</option>
-                  <option value="Gift Cards">Gift Cards</option>
-                  <option value="Cards & Keepsakes">Cards & Keepsakes</option>
-                  <option value="Crochet & Crafts">Crochet & Crafts</option>
-                  <option value="Photo Frames">Photo Frames</option>
-                </select>
-                <input type="number" required value={productFormData.basePrice} onChange={(e) => setProductFormData({ ...productFormData, basePrice: e.target.value })} placeholder="Price (₹)" className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]" />
+              <div>
+                <label className="block font-bold text-[#2b2524] mb-1">Product Title *</label>
+                <input type="text" required value={productFormData.title} onChange={(e) => setProductFormData({ ...productFormData, title: e.target.value })} placeholder="e.g. Custom Die-Cast Car Display Frame" className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]" />
               </div>
-              <input type="text" value={productFormData.images} onChange={(e) => setProductFormData({ ...productFormData, images: e.target.value })} placeholder="Image URLs (comma-separated)" className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]" />
-              <textarea required rows={3} value={productFormData.description} onChange={(e) => setProductFormData({ ...productFormData, description: e.target.value })} placeholder="Description" className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]"></textarea>
-              <button type="submit" className="w-full py-3 bg-[#b57c70] text-white font-bold uppercase rounded shadow hover:bg-[#9e675b] transition-all">
-                Save Item Details
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-[#2b2524] mb-1">Category *</label>
+                  <select value={productFormData.category} onChange={(e) => setProductFormData({ ...productFormData, category: e.target.value })} className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]">
+                    <option value="Photo Frames">Photo Frames</option>
+                    <option value="Gift Albums">Gift Albums</option>
+                    <option value="Keychains">Keychains</option>
+                    <option value="Gift Boxes">Gift Boxes</option>
+                    <option value="Gift Cards">Gift Cards</option>
+                    <option value="Cards & Keepsakes">Cards & Keepsakes</option>
+                    <option value="Crochet & Crafts">Crochet & Crafts</option>
+                    <option value="Sparkbooks">Sparkbooks</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block font-bold text-[#2b2524] mb-1">Selling Price (₹) *</label>
+                  <input type="number" required value={productFormData.basePrice} onChange={(e) => setProductFormData({ ...productFormData, basePrice: e.target.value })} placeholder="e.g. 899" className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]" />
+                </div>
+              </div>
+
+              {/* DIRECT PRODUCT PHOTO FILE PICKER */}
+              <div className="bg-[#f5ebe8]/50 p-3.5 rounded-xl border border-[#b57c70]/20 space-y-2">
+                <label className="block font-bold text-[#2b2524] flex items-center gap-1.5">
+                  <ImageIcon className="w-4 h-4 text-[#b57c70]" /> Upload Product Photos (Upload 1, 2, 3, 4+ Photos)
+                </label>
+
+                <div className="border-2 border-dashed border-[#b57c70]/40 hover:border-[#b57c70] rounded-xl p-3 bg-white text-center cursor-pointer relative transition-all">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleProductPhotoFileUpload}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                  />
+                  <Upload className="w-5 h-5 text-[#b57c70] mx-auto mb-1" />
+                  <p className="text-xs font-bold text-[#2b2524]">Click or Drag Photos Here to Upload</p>
+                  <p className="text-[10px] text-[#2b2524]/60">Select 1, 2, 3, or 4+ photos for this item</p>
+                </div>
+
+                {/* Previews of attached product photos */}
+                {getImageList(productFormData.images).length > 0 && (
+                  <div className="pt-2">
+                    <p className="text-[10px] font-bold uppercase text-[#b57c70] mb-1">
+                      Item Photos ({getImageList(productFormData.images).length}):
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {getImageList(productFormData.images).map((imgUrl, idx) => (
+                        <div key={idx} className="relative w-12 h-12 rounded-lg overflow-hidden border border-[#b57c70]/30 shadow-sm group">
+                          <img src={imgUrl} alt={`Product ${idx}`} className="w-full h-full object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveProductPhoto(idx)}
+                            className="absolute top-0 right-0 p-0.5 bg-black/70 text-white rounded-bl"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-1">
+                  <label className="block text-[10px] text-[#2b2524]/70 font-semibold mb-0.5">Or Paste Comma-Separated Image Links:</label>
+                  <input
+                    type="text"
+                    value={productFormData.images}
+                    onChange={(e) => setProductFormData({ ...productFormData, images: e.target.value })}
+                    placeholder="https://link1.jpg, https://link2.jpg"
+                    className="w-full p-2 border rounded border-[#2b2524]/20 bg-white text-[11px]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-[#2b2524] mb-1">Description *</label>
+                <textarea required rows={3} value={productFormData.description} onChange={(e) => setProductFormData({ ...productFormData, description: e.target.value })} placeholder="Detailed product description..." className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]"></textarea>
+              </div>
+
+              <button type="submit" className="w-full py-3 bg-[#b57c70] text-white font-bold uppercase rounded shadow hover:bg-[#9e675b] transition-all flex items-center justify-center gap-1.5">
+                <Save className="w-4 h-4" />
+                <span>Save Item Details</span>
               </button>
             </form>
           </div>
@@ -288,7 +401,7 @@ export default function AdminDashboard() {
 
             <h3 className="font-serif text-xl font-bold text-[#2b2524]">Successfully Saved!</h3>
             <p className="text-xs text-[#2b2524]/80 leading-relaxed font-medium">
-              Product details have been successfully updated in your studio inventory.
+              Product details and photos have been successfully updated in your studio inventory.
             </p>
 
             <button
