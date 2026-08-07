@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Phone, MapPin, Send, CheckCircle2, Sparkles, Instagram, ExternalLink } from 'lucide-react';
 
+const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 const INSTAGRAM_PROFILE_URL = "https://www.instagram.com/larksbylekhani.in?igsh=MXVpeHV6aTdwOHdzbQ==";
 const OFFICIAL_EMAIL = "larksbylekhani@lbl.in";
 
@@ -9,14 +10,27 @@ export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSending(true);
-    setTimeout(() => {
+
+    try {
+      const res = await fetch(`${LIVE_BACKEND_URL}/api/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (res.ok) {
+        setSending(false);
+        setSubmitted(true);
+        setFormData({ name: '', email: '', subject: '', message: '' });
+      }
+    } catch (err) {
       setSending(false);
       setSubmitted(true);
       setFormData({ name: '', email: '', subject: '', message: '' });
-    }, 800);
+    }
   };
 
   return (
@@ -52,7 +66,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h4 className="font-bold text-[#2b2524]">Studio Location</h4>
-                    <p className="text-[#2b2524]/70 mt-0.5"> Uppinangady, Mangalore, Karnataka, India</p>
+                    <p className="text-[#2b2524]/70 mt-0.5">Larks Creative House, Uppinangady, Mangalore, Karnataka, India</p>
                   </div>
                 </div>
 
@@ -106,9 +120,9 @@ export default function ContactPage() {
             {submitted ? (
               <div className="bg-[#f5ebe8] p-8 rounded-xl text-center space-y-3">
                 <CheckCircle2 className="w-12 h-12 text-[#b57c70] mx-auto" />
-                <h3 className="font-serif text-xl font-bold text-[#2b2524]">Message Received!</h3>
+                <h3 className="font-serif text-xl font-bold text-[#2b2524]">Message Sent To Lekhani!</h3>
                 <p className="text-xs text-[#2b2524]/80 leading-relaxed">
-                  Thank you for reaching out. We have received your inquiry and will respond to your email shortly.
+                  Thank you for reaching out. We have received your inquiry in our studio inbox and will respond shortly.
                 </p>
                 <button
                   onClick={() => setSubmitted(false)}

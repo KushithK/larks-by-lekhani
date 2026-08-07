@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon, CheckCircle2, Upload, ArrowRight, Check, AlertCircle, ZoomIn, Eye, Sparkles, Flame, Percent } from 'lucide-react';
+import { Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon, CheckCircle2, Upload, ArrowRight, Check, AlertCircle, ZoomIn, Eye, Sparkles, Flame, Percent, MessageSquare, Mail } from 'lucide-react';
 
 const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
+const STATUS_STEPS = ['Pending Review', 'In Production', 'Dispatched', 'Completed'];
 
 const compressImageFile = (file, maxWidth = 800, maxHeight = 800, quality = 0.7) => {
   return new Promise((resolve) => {
@@ -38,9 +39,10 @@ const compressImageFile = (file, maxWidth = 800, maxHeight = 800, quality = 0.7)
 };
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('products');
+  const [activeTab, setActiveTab] = useState('products'); // 'products' | 'orders' | 'messages' | 'highlights'
   const [products, setProducts] = useState([]);
   const [highlights, setHighlights] = useState([]);
+  const [messages, setMessages] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [showSaveSuccessPopup, setShowSaveSuccessPopup] = useState(false);
@@ -60,15 +62,8 @@ export default function AdminDashboard() {
   const [statusPopupText, setStatusPopupText] = useState('');
   const [showStatusPopup, setShowStatusPopup] = useState(false);
 
-  // PRODUCT FORM DATA (INCLUDES DISCOUNT PERCENT)
   const [productFormData, setProductFormData] = useState({
-    title: '',
-    category: 'Photo Frames',
-    basePrice: '',
-    discountPercent: 50,
-    images: [],
-    description: '',
-    artisanalDetails: ''
+    title: '', category: 'Photo Frames', basePrice: '', discountPercent: 50, images: [], description: '', artisanalDetails: ''
   });
 
   const [orders, setOrders] = useState([]);
@@ -77,6 +72,7 @@ export default function AdminDashboard() {
     fetchProducts();
     fetchOrders();
     fetchHighlights();
+    fetchMessages();
   }, []);
 
   const fetchProducts = async () => {
@@ -100,6 +96,22 @@ export default function AdminDashboard() {
       const res = await fetch(`${LIVE_BACKEND_URL}/api/highlights`);
       const data = await res.json();
       setHighlights(data);
+    } catch (err) {}
+  };
+
+  const fetchMessages = async () => {
+    try {
+      const res = await fetch(`${LIVE_BACKEND_URL}/api/messages`);
+      const data = await res.json();
+      setMessages(data);
+    } catch (err) {}
+  };
+
+  const handleDeleteMessage = async (id) => {
+    if (!window.confirm('Delete this customer message?')) return;
+    try {
+      await fetch(`${LIVE_BACKEND_URL}/api/messages/${id}`, { method: 'DELETE' });
+      fetchMessages();
     } catch (err) {}
   };
 
@@ -280,8 +292,11 @@ export default function AdminDashboard() {
             <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded text-xs font-bold ${activeTab === 'orders' ? 'bg-[#b57c70] text-white' : 'text-[#2b2524]'}`}>
               Orders ({orders.length})
             </button>
+            <button onClick={() => setActiveTab('messages')} className={`px-4 py-2 rounded text-xs font-bold ${activeTab === 'messages' ? 'bg-[#b57c70] text-white' : 'text-[#2b2524]'}`}>
+              Customer Messages ({messages.length})
+            </button>
             <button onClick={() => setActiveTab('highlights')} className={`px-4 py-2 rounded text-xs font-bold ${activeTab === 'highlights' ? 'bg-[#b57c70] text-white' : 'text-[#2b2524]'}`}>
-              Brand Highlights ({highlights.length})
+              Highlights ({highlights.length})
             </button>
           </div>
         </div>
@@ -467,13 +482,70 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* BRAND HIGHLIGHTS MANAGEMENT TAB */}
+        {/* CUSTOMER MESSAGES TAB */}
+        {activeTab === 'messages' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="font-serif text-xl font-semibold text-[#2b2524]">Customer Contact Inquiries</h2>
+                <p className="text-xs text-[#2b2524]/60">Direct messages sent from the Contact Us page.</p>
+              </div>
+              <button onClick={fetchMessages} className="text-xs text-[#b57c70] font-semibold flex items-center gap-1">
+                <RefreshCw className="w-3.5 h-3.5" /> Refresh Inbox
+              </button>
+            </div>
+
+            {messages.length === 0 ? (
+              <div className="p-12 text-center bg-white rounded-xl border border-dashed border-[#b57c70]/30 text-xs text-[#2b2524]/70">
+                No customer messages in inbox yet.
+              </div>
+            ) : (
+              messages.map((msg) => (
+                <div key={msg._id} className="bg-white rounded-xl border border-[#b57c70]/20 p-5 shadow-sm space-y-3">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 border-b pb-3">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-[#b57c70]" />
+                      <span className="font-bold text-xs text-[#2b2524]">{msg.name}</span>
+                      <a href={`mailto:${msg.email}`} className="text-xs text-[#b57c70] hover:underline flex items-center gap-1">
+                        <Mail className="w-3 h-3" /> {msg.email}
+                      </a>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className="text-[10px] text-[#2b2524]/50">
+                        {new Date(msg.createdAt).toLocaleString()}
+                      </span>
+                      <button
+                        onClick={() => handleDeleteMessage(msg._id)}
+                        className="p-1 text-rose-600 hover:bg-rose-50 rounded"
+                        title="Delete Message"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 text-xs">
+                    <span className="text-[10px] uppercase font-bold text-[#b57c70] bg-[#f5ebe8] px-2 py-0.5 rounded">
+                      Subject: {msg.subject}
+                    </span>
+                    <p className="text-[#2b2524]/90 italic bg-[#faf6f5] p-3 rounded border border-[#b57c70]/10 leading-relaxed mt-2">
+                      "{msg.message}"
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
+
+        {/* BRAND HIGHLIGHTS TAB */}
         {activeTab === 'highlights' && (
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-6 border border-[#b57c70]/20 shadow-sm space-y-4">
               <h2 className="font-serif text-2xl font-bold text-[#2b2524] flex items-center gap-2">
                 <Flame className="w-5 h-5 text-amber-500 fill-current" />
-                <span>Manage Studio Brand Highlights (Homepage Reel)</span>
+                <span>Manage Studio Brand Highlights</span>
               </h2>
               <p className="text-xs text-[#2b2524]/70">
                 Add floating animated highlight story bubbles displayed between your studio name and search bar.
@@ -636,7 +708,6 @@ export default function AdminDashboard() {
                   <input type="number" required value={productFormData.basePrice} onChange={(e) => setProductFormData({ ...productFormData, basePrice: e.target.value })} placeholder="e.g. 899" className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]" />
                 </div>
 
-                {/* EDITABLE DISCOUNT PERCENTAGE FIELD */}
                 <div>
                   <label className="block font-bold text-[#2b2524] mb-1 flex items-center gap-1">
                     <Percent className="w-3.5 h-3.5 text-[#b57c70]" /> Discount (%)
@@ -723,7 +794,7 @@ export default function AdminDashboard() {
 
             <h3 className="font-serif text-xl font-bold text-[#2b2524]">Successfully Saved!</h3>
             <p className="text-xs text-[#2b2524]/80 leading-relaxed font-medium">
-              Product details, discount, and all selected photos have been saved to your studio inventory.
+              Product details and all selected photos have been saved to your studio inventory.
             </p>
 
             <button

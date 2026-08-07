@@ -38,6 +38,13 @@ const highlightSchema = new mongoose.Schema({
   imageUrl: { type: String, required: true }
 }, { timestamps: true });
 
+const messageSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+  subject: { type: String, required: true },
+  message: { type: String, required: true }
+}, { timestamps: true });
+
 const orderSchema = new mongoose.Schema({
   productId: { type: String, required: true },
   productTitle: { type: String, required: true },
@@ -58,37 +65,29 @@ const orderSchema = new mongoose.Schema({
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 const Product = mongoose.models.Product || mongoose.model('Product', productSchema);
 const Highlight = mongoose.models.Highlight || mongoose.model('Highlight', highlightSchema);
+const Message = mongoose.models.Message || mongoose.model('Message', messageSchema);
 const Order = mongoose.models.Order || mongoose.model('Order', orderSchema);
 
-// In-Memory Fallbacks & Multi-Photo Catalog with Discount Percent
+// In-Memory Fallbacks & Initial Data
 let inMemoryUsers = [];
 let inMemoryOrders = [];
-let inMemoryHighlights = [
+let inMemoryMessages = [
   {
-    _id: "h1",
-    title: "Bespoke Albums",
-    imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop"
-  },
-  {
-    _id: "h2",
-    title: "Floral Resin",
-    imageUrl: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"
-  },
-  {
-    _id: "h3",
-    title: "3D Car Frames",
-    imageUrl: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=800&auto=format&fit=crop"
-  },
-  {
-    _id: "h4",
-    title: "Bird Hampers",
-    imageUrl: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop"
-  },
-  {
-    _id: "h5",
-    title: "Crochet Crafts",
-    imageUrl: "https://images.unsplash.com/photo-1582562124811-c09040d0a901?q=80&w=800&auto=format&fit=crop"
+    _id: "m1",
+    name: "Radhika Roy",
+    email: "radhika@example.com",
+    subject: "Inquiry about Bulk Wedding Hampers",
+    message: "Hi Lekhani! I love your lace ribbon gift boxes. I need 15 customized hamper boxes for an upcoming wedding in October. Could you please let me know bulk pricing?",
+    createdAt: new Date().toISOString()
   }
+];
+
+let inMemoryHighlights = [
+  { _id: "h1", title: "Bespoke Albums", imageUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop" },
+  { _id: "h2", title: "Floral Resin", imageUrl: "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop" },
+  { _id: "h3", title: "3D Car Frames", imageUrl: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=800&auto=format&fit=crop" },
+  { _id: "h4", title: "Bird Hampers", imageUrl: "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop" },
+  { _id: "h5", title: "Crochet Crafts", imageUrl: "https://images.unsplash.com/photo-1582562124811-c09040d0a901?q=80&w=800&auto=format&fit=crop" }
 ];
 
 let inMemoryProducts = [
@@ -98,12 +97,8 @@ let inMemoryProducts = [
     basePrice: 499,
     discountPercent: 50,
     category: "Gift Albums",
-    images: [
-      "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"
-    ],
-    description: "A compact handcrafted birthday memory album book with interactive flip tabs, pull-out photo sleeves, and cute birthday prompts.",
-    artisanalDetails: ["Hand-stitched spine", "Acid-free archival pages"]
+    images: ["https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop"],
+    description: "A compact handcrafted birthday memory album book with interactive flip tabs, pull-out photo sleeves, and cute birthday prompts."
   },
   {
     _id: "2",
@@ -111,11 +106,8 @@ let inMemoryProducts = [
     basePrice: 149,
     discountPercent: 50,
     category: "Keychains",
-    images: [
-      "https://images.unsplash.com/photo-1611591475171-d41c10d32cb5?q=80&w=800&auto=format&fit=crop"
-    ],
-    description: "Charming small gift keychain featuring real pressed dried flowers, subtle foil accents, and a durable antique brass ring.",
-    artisanalDetails: ["Real dried flowers", "Lightweight epoxy resin"]
+    images: ["https://images.unsplash.com/photo-1611591475171-d41c10d32cb5?q=80&w=800&auto=format&fit=crop"],
+    description: "Charming small gift keychain featuring real pressed dried flowers, subtle foil accents, and a durable antique brass ring."
   },
   {
     _id: "3",
@@ -123,11 +115,8 @@ let inMemoryProducts = [
     basePrice: 999,
     discountPercent: 40,
     category: "Gift Boxes",
-    images: [
-      "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop"
-    ],
-    description: "A delightful small bird-themed gift box curated with ribbon, a dainty necklace, custom keychain, sticker pack, hair clips, earrings, and a face mask.",
-    artisanalDetails: ["Includes 7 curated items", "Hand-tied satin ribbon box"]
+    images: ["https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop"],
+    description: "A delightful small bird-themed gift box curated with ribbon, a dainty necklace, custom keychain, sticker pack, hair clips, earrings, and a face mask."
   },
   {
     _id: "4",
@@ -135,11 +124,8 @@ let inMemoryProducts = [
     basePrice: 99,
     discountPercent: 30,
     category: "Gift Cards",
-    images: [
-      "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"
-    ],
-    description: "Set of custom designed aesthetic gift cards with gold foil stamping, blank interior for personal notes, and vintage kraft envelope.",
-    artisanalDetails: ["300 GSM textured paper", "Gold foil accents"]
+    images: ["https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"],
+    description: "Set of custom designed aesthetic gift cards with gold foil stamping, blank interior for personal notes, and vintage kraft envelope."
   },
   {
     _id: "5",
@@ -147,11 +133,8 @@ let inMemoryProducts = [
     basePrice: 199,
     discountPercent: 50,
     category: "Cards & Keepsakes",
-    images: [
-      "https://images.unsplash.com/photo-1528458909336-e7a0adfac1d5?q=80&w=800&auto=format&fit=crop"
-    ],
-    description: "Adorable handcrafted greeting card featuring a soft 3D hand-crocheted yarn flower stem on premium cardstock at an affordable price.",
-    artisanalDetails: ["100% hand-crocheted flower", "300 GSM kraft cardstock"]
+    images: ["https://images.unsplash.com/photo-1528458909336-e7a0adfac1d5?q=80&w=800&auto=format&fit=crop"],
+    description: "Adorable handcrafted greeting card featuring a soft 3D hand-crocheted yarn flower stem on premium cardstock at an affordable price."
   },
   {
     _id: "6",
@@ -159,11 +142,8 @@ let inMemoryProducts = [
     basePrice: 299,
     discountPercent: 25,
     category: "Crochet & Crafts",
-    images: [
-      "https://images.unsplash.com/photo-1582562124811-c09040d0a901?q=80&w=800&auto=format&fit=crop"
-    ],
-    description: "Cute hand-crocheted mini bucket pouch crafted with soft cotton yarn, perfect for holding small trinkets, jewelry, or desktop accessories.",
-    artisanalDetails: ["100% soft cotton yarn", "Hand-stitched handle"]
+    images: ["https://images.unsplash.com/photo-1582562124811-c09040d0a901?q=80&w=800&auto=format&fit=crop"],
+    description: "Cute hand-crocheted mini bucket pouch crafted with soft cotton yarn, perfect for holding small trinkets, jewelry, or desktop accessories."
   },
   {
     _id: "7",
@@ -171,11 +151,8 @@ let inMemoryProducts = [
     basePrice: 899,
     discountPercent: 50,
     category: "Photo Frames",
-    images: [
-      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=800&auto=format&fit=crop"
-    ],
-    description: "Bespoke 3D shadow box frame designed specifically to display your favorite die-cast model car with custom background graphics.",
-    artisanalDetails: ["Deep 3D shadow box frame", "Glass front protection"]
+    images: ["https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=800&auto=format&fit=crop"],
+    description: "Bespoke 3D shadow box frame designed specifically to display your favorite die-cast model car with custom background graphics."
   },
   {
     _id: "8",
@@ -183,11 +160,8 @@ let inMemoryProducts = [
     basePrice: 649,
     discountPercent: 50,
     category: "Photo Frames",
-    images: [
-      "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"
-    ],
-    description: "Handmade wooden memory photo frame customized with your favorite photographs, dried botanicals, and personalized names.",
-    artisanalDetails: ["Solid teakwood frame", "Real dried flowers"]
+    images: ["https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"],
+    description: "Handmade wooden memory photo frame customized with your favorite photographs, dried botanicals, and personalized names."
   }
 ];
 
@@ -201,7 +175,37 @@ const formatImagesArray = (imagesInput) => {
 };
 
 // ==========================================
-// 2. HIGHLIGHTS ROUTES
+// 2. MESSAGES ROUTES
+// ==========================================
+app.post('/api/messages', async (req, res) => {
+  const { name, email, subject, message } = req.body;
+  const newM = { _id: 'm_' + Date.now(), name, email, subject, message, createdAt: new Date().toISOString() };
+  try {
+    const dbM = new Message(newM);
+    await dbM.save();
+  } catch (err) {}
+  inMemoryMessages.unshift(newM);
+  res.status(201).json({ success: true, message: 'Message sent successfully', messageData: newM });
+});
+
+app.get('/api/messages', async (req, res) => {
+  try {
+    const messages = await Message.find({}).sort({ createdAt: -1 });
+    if (messages.length > 0) return res.status(200).json(messages);
+    return res.status(200).json(inMemoryMessages);
+  } catch (err) {
+    return res.status(200).json(inMemoryMessages);
+  }
+});
+
+app.delete('/api/messages/:id', async (req, res) => {
+  try { await Message.findByIdAndDelete(req.params.id); } catch (err) {}
+  inMemoryMessages = inMemoryMessages.filter(m => m._id !== req.params.id);
+  res.status(200).json({ message: 'Message deleted' });
+});
+
+// ==========================================
+// 3. HIGHLIGHTS ROUTES
 // ==========================================
 app.get('/api/highlights', async (req, res) => {
   try {
@@ -231,7 +235,7 @@ app.delete('/api/highlights/:id', async (req, res) => {
 });
 
 // ==========================================
-// 3. AUTH ROUTES
+// 4. AUTH ROUTES
 // ==========================================
 app.post('/api/auth/user/register', async (req, res) => {
   try {
@@ -290,7 +294,7 @@ app.post('/api/auth/admin/login', (req, res) => {
 });
 
 // ==========================================
-// 4. PRODUCT ROUTES (WITH DISCOUNT PERCENT)
+// 5. PRODUCT ROUTES
 // ==========================================
 app.get('/api/products', async (req, res) => {
   try {
@@ -370,7 +374,7 @@ app.delete('/api/products/:id', async (req, res) => {
 });
 
 // ==========================================
-// 5. ORDER ROUTES
+// 6. ORDER ROUTES
 // ==========================================
 app.post('/api/orders', async (req, res) => {
   try {
