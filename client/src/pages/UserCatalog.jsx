@@ -73,7 +73,7 @@ export default function UserCatalog() {
   return (
     <div className="min-h-screen bg-[#faf6f5]">
       
-      {/* INLINE ANIMATION STYLES FOR FLOATING & SWAYING HIGHLIGHTS */}
+      {/* INLINE ANIMATION STYLES FOR FLOATING HIGHLIGHTS */}
       <style>{`
         @keyframes floatUpDown {
           0%, 100% { transform: translateY(0px) rotate(0deg); }
@@ -103,14 +103,13 @@ export default function UserCatalog() {
             Heartmade Albums, Keychains, Hampers, Crochet Crafts & Custom Photo Frames
           </p>
 
-          {/* ================= BRAND PRODUCT HIGHLIGHTS BAR (AFTER NAME, BEFORE SEARCH BAR) ================= */}
+          {/* BRAND HIGHLIGHTS REEL */}
           <div className="pt-4 pb-2">
             <div className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#b57c70] mb-3">
               <Flame className="w-3.5 h-3.5 text-amber-500 fill-current animate-pulse" />
-              <span>Studio Highlights</span>
+              <span>Studio Highlights Reel</span>
             </div>
 
-            {/* FLOATING ANIMATED REEL */}
             <div className="flex items-center justify-center gap-4 sm:gap-6 overflow-x-auto py-2 px-4 no-scrollbar">
               {highlights.map((item, idx) => (
                 <div
@@ -122,7 +121,6 @@ export default function UserCatalog() {
                   className="group flex flex-col items-center gap-1.5 cursor-pointer flex-shrink-0 animate-float-slow"
                   style={{ animationDelay: `${idx * 0.4}s` }}
                 >
-                  {/* Floating Bubble with Gradient Ring */}
                   <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full p-1 bg-gradient-to-tr from-[#b57c70] via-amber-400 to-[#2b2524] shadow-md group-hover:scale-110 transition-transform duration-300">
                     <div className="w-full h-full rounded-full overflow-hidden border-2 border-white bg-white">
                       <img
@@ -140,7 +138,7 @@ export default function UserCatalog() {
             </div>
           </div>
 
-          {/* SEARCH BAR (AFTER HIGHLIGHTS) */}
+          {/* SEARCH BAR */}
           <div className="max-w-md mx-auto pt-2">
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3.5 top-3.5 text-[#2b2524]/40" />
@@ -209,7 +207,8 @@ export default function UserCatalog() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
             {filteredProducts.map((product) => {
               const sellingPrice = product.basePrice;
-              const originalMRP = sellingPrice * 2;
+              const discount = product.discountPercent || 50;
+              const originalMRP = Math.round(sellingPrice / (1 - (discount / 100)));
 
               return (
                 <div
@@ -227,7 +226,7 @@ export default function UserCatalog() {
                         {product.category}
                       </span>
                       <span className="absolute top-3 right-3 bg-emerald-600 text-white text-[10px] font-bold uppercase px-2 py-0.5 rounded shadow">
-                        50% OFF
+                        {discount}% OFF
                       </span>
                     </div>
 
@@ -239,6 +238,7 @@ export default function UserCatalog() {
                         {product.description}
                       </p>
 
+                      {/* DYNAMIC DISCOUNT PRICING */}
                       <div className="mt-3 flex items-baseline gap-2">
                         <span className="text-base font-bold text-[#b57c70]">₹{sellingPrice}.00</span>
                         <span className="text-xs text-rose-500 line-through opacity-70">₹{originalMRP}.00</span>

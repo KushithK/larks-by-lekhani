@@ -11,12 +11,13 @@ const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 const YOUR_REAL_UPI_ID = "larksbylekhani@upi";
 const STUDIO_BUSINESS_NAME = "Larks by Lekhani";
 
-// FALLBACK MULTI-PHOTO CATALOG
+// FAIL-SAFE MULTI-PHOTO CATALOG
 const FALLBACK_CATALOG = [
   {
     _id: "1",
     title: "Birthday Story Mini Memory Album",
     basePrice: 499,
+    discountPercent: 50,
     category: "Gift Albums",
     images: [
       "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop",
@@ -29,6 +30,7 @@ const FALLBACK_CATALOG = [
     _id: "2",
     title: "Handcrafted Floral Resin Keychain",
     basePrice: 149,
+    discountPercent: 50,
     category: "Keychains",
     images: [
       "https://images.unsplash.com/photo-1611591475171-d41c10d32cb5?q=80&w=800&auto=format&fit=crop",
@@ -40,6 +42,7 @@ const FALLBACK_CATALOG = [
     _id: "3",
     title: "Sweet Bird Gift Hamper Box",
     basePrice: 999,
+    discountPercent: 40,
     category: "Gift Boxes",
     images: [
       "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop",
@@ -51,6 +54,7 @@ const FALLBACK_CATALOG = [
     _id: "4",
     title: "Artisanal Designed Gift Cards Set",
     basePrice: 99,
+    discountPercent: 30,
     category: "Gift Cards",
     images: ["https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"],
     description: "Set of custom designed aesthetic gift cards with gold foil stamping, blank interior for personal notes, and vintage kraft envelope."
@@ -59,6 +63,7 @@ const FALLBACK_CATALOG = [
     _id: "5",
     title: "Cute Handmade Crochet Flower Card",
     basePrice: 199,
+    discountPercent: 50,
     category: "Cards & Keepsakes",
     images: ["https://images.unsplash.com/photo-1528458909336-e7a0adfac1d5?q=80&w=800&auto=format&fit=crop"],
     description: "Adorable handcrafted greeting card featuring a soft 3D hand-crocheted yarn flower stem on premium cardstock at an affordable price."
@@ -67,6 +72,7 @@ const FALLBACK_CATALOG = [
     _id: "6",
     title: "Handmade Crochet Mini Bucket",
     basePrice: 299,
+    discountPercent: 25,
     category: "Crochet & Crafts",
     images: ["https://images.unsplash.com/photo-1582562124811-c09040d0a901?q=80&w=800&auto=format&fit=crop"],
     description: "Cute hand-crocheted mini bucket pouch crafted with soft cotton yarn, perfect for holding small trinkets, jewelry, or desktop accessories."
@@ -75,6 +81,7 @@ const FALLBACK_CATALOG = [
     _id: "7",
     title: "Custom Die-Cast Car Display Frame",
     basePrice: 899,
+    discountPercent: 50,
     category: "Photo Frames",
     images: [
       "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=800&auto=format&fit=crop",
@@ -87,6 +94,7 @@ const FALLBACK_CATALOG = [
     _id: "8",
     title: "Heartmade Custom Memory Frame",
     basePrice: 649,
+    discountPercent: 50,
     category: "Photo Frames",
     images: [
       "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop",
@@ -174,10 +182,14 @@ export default function ProductDetailPage() {
         const data = await response.json();
         
         let parsedImgs = [];
-        if (Array.isArray(data.images)) {
+        if (Array.isArray(data.images) && data.images.length > 0) {
           parsedImgs = data.images;
-        } else if (typeof data.images === 'string') {
+        } else if (typeof data.images === 'string' && data.images.length > 0) {
           parsedImgs = data.images.split(',').map(s=>s.trim()).filter(Boolean);
+        }
+
+        if (parsedImgs.length === 0) {
+          parsedImgs = ["https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop"];
         }
 
         setProduct({ ...data, images: parsedImgs });
@@ -197,7 +209,7 @@ export default function ProductDetailPage() {
     if (!product) return [];
     if (Array.isArray(product.images) && product.images.length > 0) return product.images;
     if (typeof product.images === 'string' && product.images.length > 0) return product.images.split(',').map(s=>s.trim()).filter(Boolean);
-    return ['https://via.placeholder.com/600'];
+    return ['https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop'];
   };
 
   const productImages = getProductImageList();
@@ -364,7 +376,8 @@ export default function ProductDetailPage() {
   }
 
   const originalPrice = product.basePrice;
-  const strikeThroughMRP = originalPrice * 2;
+  const discountPercent = product.discountPercent || 50;
+  const strikeThroughMRP = Math.round(originalPrice / (1 - (discountPercent / 100)));
   const itemSubtotal = originalPrice * quantity;
   const grandTotal = itemSubtotal + deliveryCharge;
 
@@ -443,35 +456,34 @@ export default function ProductDetailPage() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
             
             <div className="lg:col-span-5 space-y-4">
-              {/* Main Image View */}
               <div className="aspect-square bg-white rounded-2xl overflow-hidden border border-[#b57c70]/20 shadow-sm relative group">
                 <img
                   src={productImages[currentImageIndex] || 'https://via.placeholder.com/600'}
                   alt={product.title}
                   className="w-full h-full object-cover transition-all duration-300"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop';
+                  }}
                 />
 
-                {/* Photo Badge */}
                 {productImages.length > 1 && (
                   <span className="absolute top-3 right-3 bg-black/70 text-white text-[10px] font-bold px-2.5 py-1 rounded-full shadow backdrop-blur-sm">
                     {currentImageIndex + 1} / {productImages.length} Photos
                   </span>
                 )}
 
-                {/* Left/Right Arrows */}
                 {productImages.length > 1 && (
                   <>
                     <button
                       onClick={prevImage}
                       className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white text-[#2b2524] shadow-md transition-all"
-                      title="Previous photo"
                     >
                       <ChevronLeft className="w-5 h-5" />
                     </button>
                     <button
                       onClick={nextImage}
                       className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-white/80 hover:bg-white text-[#2b2524] shadow-md transition-all"
-                      title="Next photo"
                     >
                       <ChevronRight className="w-5 h-5" />
                     </button>
@@ -479,7 +491,6 @@ export default function ProductDetailPage() {
                 )}
               </div>
 
-              {/* MULTI-PHOTO THUMBNAIL STRIP (SLIDE/CLICK UP TO 10 PHOTOS) */}
               {productImages.length > 1 && (
                 <div className="space-y-1">
                   <span className="text-[10px] font-bold uppercase text-[#b57c70]">
@@ -496,7 +507,15 @@ export default function ProductDetailPage() {
                             : 'border-transparent opacity-60 hover:opacity-100'
                         }`}
                       >
-                        <img src={imgUrl} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
+                        <img 
+                          src={imgUrl} 
+                          alt={`Thumbnail ${idx + 1}`} 
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop';
+                          }} 
+                        />
                       </button>
                     ))}
                   </div>
@@ -531,7 +550,7 @@ export default function ProductDetailPage() {
                     Rs. {strikeThroughMRP}.00
                   </span>
                   <span className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
-                    50% OFF
+                    {discountPercent}% OFF
                   </span>
                 </div>
               </div>
@@ -540,7 +559,6 @@ export default function ProductDetailPage() {
                 {product.description}
               </p>
 
-              {/* Quantity Counter & Buttons */}
               <div className="space-y-4 pt-2">
                 <div className="flex items-center gap-4">
                   <label className="text-xs font-bold uppercase text-[#2b2524]">Quantity:</label>

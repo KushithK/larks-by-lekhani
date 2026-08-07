@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, Clock, Truck, CheckCircle2, MapPin, Link as LinkIcon, Sparkles, RefreshCw, Type, Image as ImageIcon, Star, X } from 'lucide-react';
 
+const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
+
 export default function MyOrdersPage({ currentUser }) {
   const [userOrders, setUserOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -13,26 +15,37 @@ export default function MyOrdersPage({ currentUser }) {
   const [reviewSubmittedSuccess, setReviewSubmittedSuccess] = useState(false);
 
   useEffect(() => {
-    if (currentUser && currentUser.email) {
-      fetchUserOrders();
-    } else {
-      setLoading(false);
-    }
+    fetchUserOrders();
   }, [currentUser]);
 
   const fetchUserOrders = async () => {
     setLoading(true);
-    try {
-      const res = await fetch(`https://larks-by-lekhani.onrender.com/api/orders/user/${currentUser.email}`);
-      if (res.ok) {
-        const data = await res.json();
-        setUserOrders(data);
+    let apiOrders = [];
+
+    if (currentUser && currentUser.email) {
+      try {
+        const res = await fetch(`${LIVE_BACKEND_URL}/api/orders/user/${currentUser.email}`);
+        if (res.ok) {
+          apiOrders = await res.json();
+        }
+      } catch (err) {
+        console.error('API fetch error:', err);
       }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading(false);
     }
+
+    // Read local placed orders fallback
+    const localPlacedOrders = JSON.parse(localStorage.getItem('larks_placed_orders') || '[]');
+    
+    // Merge API orders + Local orders smoothly
+    const allCombined = [...apiOrders];
+    localPlacedOrders.forEach(loc => {
+      if (!allCombined.some(o => o._id === loc._id)) {
+        allCombined.push(loc);
+      }
+    });
+
+    setUserOrders(allCombined);
+    setLoading(false);
   };
 
   const getStepStatusIndex = (status) => {
@@ -51,7 +64,7 @@ export default function MyOrdersPage({ currentUser }) {
 
     const newReview = {
       id: Date.now(),
-      name: currentUser.name || 'Verified Buyer',
+      name: currentUser ? currentUser.name : 'Verified Buyer',
       rating: Number(reviewRating),
       date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
       productTitle: selectedOrderForReview.productTitle,
@@ -82,7 +95,7 @@ export default function MyOrdersPage({ currentUser }) {
               <Sparkles className="w-3.5 h-3.5" /> Handcrafted Studio Tracking
             </div>
             <h1 className="font-serif text-3xl sm:text-4xl font-bold text-[#2b2524]">
-              My Orders & Verified Reviews
+              My Orders & Live Progress
             </h1>
             <p className="text-xs text-[#2b2524]/70 mt-1">
               Track your custom handcrafted requests and leave verified reviews for your purchased items.
@@ -106,7 +119,7 @@ export default function MyOrdersPage({ currentUser }) {
             <Package className="w-12 h-12 text-[#b57c70] mx-auto opacity-50" />
             <h3 className="font-serif text-xl font-bold text-[#2b2524]">No Orders Found</h3>
             <p className="text-xs text-[#2b2524]/70 max-w-sm mx-auto">
-              You haven't placed any custom handcrafted orders yet with email <strong>{currentUser.email}</strong>.
+              You haven't placed any custom handcrafted orders yet.
             </p>
             <div className="pt-2">
               <Link
@@ -120,7 +133,7 @@ export default function MyOrdersPage({ currentUser }) {
         ) : (
           <div className="space-y-8">
             {userOrders.map((order) => {
-              const activeStep = getStepStatusIndex(order.status);
+              const activeStep = getStepStatusIndex(order.status || 'Pending Review');
 
               return (
                 <div
@@ -148,7 +161,6 @@ export default function MyOrdersPage({ currentUser }) {
                         </span>
                       </div>
 
-                      {/* VERIFIED BUYER REVIEW BUTTON */}
                       <button
                         onClick={() => setSelectedOrderForReview(order)}
                         className="px-3.5 py-2 bg-[#b57c70] hover:bg-[#9e675b] text-white text-xs font-bold rounded-md shadow transition-all flex items-center gap-1.5"

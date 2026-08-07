@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon, CheckCircle2, Upload, ArrowRight, Check, AlertCircle, ZoomIn, Eye, Sparkles, Flame } from 'lucide-react';
+import { Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon, CheckCircle2, Upload, ArrowRight, Check, AlertCircle, ZoomIn, Eye, Sparkles, Flame, Percent } from 'lucide-react';
 
 const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
-const STATUS_STEPS = ['Pending Review', 'In Production', 'Dispatched', 'Completed'];
 
 const compressImageFile = (file, maxWidth = 800, maxHeight = 800, quality = 0.7) => {
   return new Promise((resolve) => {
@@ -39,14 +38,14 @@ const compressImageFile = (file, maxWidth = 800, maxHeight = 800, quality = 0.7)
 };
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('products'); // 'products' | 'orders' | 'highlights'
+  const [activeTab, setActiveTab] = useState('products');
   const [products, setProducts] = useState([]);
   const [highlights, setHighlights] = useState([]);
   const [editingProduct, setEditingProduct] = useState(null);
   const [showProductModal, setShowProductModal] = useState(false);
   const [showSaveSuccessPopup, setShowSaveSuccessPopup] = useState(false);
   
-  // New Highlight Form State
+  // Highlight Form State
   const [newHighlightTitle, setNewHighlightTitle] = useState('');
   const [newHighlightImage, setNewHighlightImage] = useState('');
 
@@ -61,8 +60,15 @@ export default function AdminDashboard() {
   const [statusPopupText, setStatusPopupText] = useState('');
   const [showStatusPopup, setShowStatusPopup] = useState(false);
 
+  // PRODUCT FORM DATA (INCLUDES DISCOUNT PERCENT)
   const [productFormData, setProductFormData] = useState({
-    title: '', category: 'Photo Frames', basePrice: '', images: [], description: '', artisanalDetails: ''
+    title: '',
+    category: 'Photo Frames',
+    basePrice: '',
+    discountPercent: 50,
+    images: [],
+    description: '',
+    artisanalDetails: ''
   });
 
   const [orders, setOrders] = useState([]);
@@ -97,7 +103,6 @@ export default function AdminDashboard() {
     } catch (err) {}
   };
 
-  // HIGHLIGHT PHOTO UPLOAD
   const handleHighlightPhotoUpload = async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -138,7 +143,7 @@ export default function AdminDashboard() {
 
   const openAddModal = () => {
     setEditingProduct(null);
-    setProductFormData({ title: '', category: 'Photo Frames', basePrice: '', images: [], description: '', artisanalDetails: '' });
+    setProductFormData({ title: '', category: 'Photo Frames', basePrice: '', discountPercent: 50, images: [], description: '', artisanalDetails: '' });
     setShowProductModal(true);
   };
 
@@ -156,6 +161,7 @@ export default function AdminDashboard() {
       title: product.title,
       category: product.category,
       basePrice: product.basePrice,
+      discountPercent: product.discountPercent || 50,
       images: parsedImages,
       description: product.description,
       artisanalDetails: Array.isArray(product.artisanalDetails) ? product.artisanalDetails.join(', ') : ''
@@ -301,8 +307,8 @@ export default function AdminDashboard() {
                         <span className="text-[10px] uppercase font-bold text-[#b57c70] bg-[#f5ebe8] px-2 py-0.5 rounded">
                           {p.category}
                         </span>
-                        <span className="text-[10px] text-[#2b2524]/70 font-bold bg-[#faf6f5] px-2 py-0.5 rounded border">
-                          📸 {imgList.length} Photos
+                        <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                          {p.discountPercent || 50}% OFF
                         </span>
                       </div>
 
@@ -319,7 +325,7 @@ export default function AdminDashboard() {
 
                     <div className="mt-4 pt-3 border-t border-[#2b2524]/10 flex justify-end gap-2">
                       <button onClick={() => openEditModal(p)} className="p-2 text-xs font-semibold text-[#2b2524] hover:bg-[#f5ebe8] rounded flex items-center gap-1 transition-colors">
-                        <Edit3 className="w-3.5 h-3.5 text-[#b57c70]" /> Update ({imgList.length} Photos)
+                        <Edit3 className="w-3.5 h-3.5 text-[#b57c70]" /> Update
                       </button>
                       <button onClick={() => handleDeleteProduct(p._id)} className="p-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded flex items-center gap-1 transition-colors">
                         <Trash2 className="w-3.5 h-3.5" /> Delete
@@ -473,7 +479,6 @@ export default function AdminDashboard() {
                 Add floating animated highlight story bubbles displayed between your studio name and search bar.
               </p>
 
-              {/* Add New Highlight Form */}
               <form onSubmit={handleAddHighlightSubmit} className="bg-[#faf6f5] p-4 rounded-xl border border-[#b57c70]/20 grid grid-cols-1 sm:grid-cols-12 gap-3 text-xs items-end">
                 <div className="sm:col-span-4">
                   <label className="block font-bold text-[#2b2524] mb-1">Highlight Title *</label>
@@ -510,7 +515,6 @@ export default function AdminDashboard() {
               </form>
             </div>
 
-            {/* Current Highlights List */}
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
               {highlights.map((h) => (
                 <div key={h._id} className="bg-white p-4 rounded-xl border border-[#b57c70]/20 text-center space-y-2 shadow-sm relative group">
@@ -594,7 +598,7 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* EDIT / ADD PRODUCT MODAL */}
+      {/* EDIT / ADD PRODUCT MODAL WITH DISCOUNT (%) MODIFIER */}
       {showProductModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-xl w-full p-6 border border-[#b57c70]/30 shadow-2xl max-h-[90vh] overflow-y-auto">
@@ -612,7 +616,7 @@ export default function AdminDashboard() {
                 <input type="text" required value={productFormData.title} onChange={(e) => setProductFormData({ ...productFormData, title: e.target.value })} placeholder="e.g. Custom Die-Cast Car Display Frame" className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]" />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block font-bold text-[#2b2524] mb-1">Category *</label>
                   <select value={productFormData.category} onChange={(e) => setProductFormData({ ...productFormData, category: e.target.value })} className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]">
@@ -630,6 +634,23 @@ export default function AdminDashboard() {
                 <div>
                   <label className="block font-bold text-[#2b2524] mb-1">Selling Price (₹) *</label>
                   <input type="number" required value={productFormData.basePrice} onChange={(e) => setProductFormData({ ...productFormData, basePrice: e.target.value })} placeholder="e.g. 899" className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5]" />
+                </div>
+
+                {/* EDITABLE DISCOUNT PERCENTAGE FIELD */}
+                <div>
+                  <label className="block font-bold text-[#2b2524] mb-1 flex items-center gap-1">
+                    <Percent className="w-3.5 h-3.5 text-[#b57c70]" /> Discount (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="99"
+                    required
+                    value={productFormData.discountPercent}
+                    onChange={(e) => setProductFormData({ ...productFormData, discountPercent: e.target.value })}
+                    placeholder="50"
+                    className="w-full p-2.5 border rounded border-[#2b2524]/20 bg-[#faf6f5] font-bold text-[#b57c70]"
+                  />
                 </div>
               </div>
 
@@ -702,7 +723,7 @@ export default function AdminDashboard() {
 
             <h3 className="font-serif text-xl font-bold text-[#2b2524]">Successfully Saved!</h3>
             <p className="text-xs text-[#2b2524]/80 leading-relaxed font-medium">
-              Product details and all selected photos have been saved to your studio inventory.
+              Product details, discount, and all selected photos have been saved to your studio inventory.
             </p>
 
             <button

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Phone, MapPin, Send, CheckCircle2, Clock, Sparkles, Instagram, ExternalLink } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, CheckCircle2, Sparkles, Instagram, ExternalLink } from 'lucide-react';
 
 const INSTAGRAM_PROFILE_URL = "https://www.instagram.com/larksbylekhani.in?igsh=MXVpeHV6aTdwOHdzbQ==";
 const OFFICIAL_EMAIL = "larksbylekhani@lbl.in";
@@ -52,7 +52,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h4 className="font-bold text-[#2b2524]">Studio Location</h4>
-                    <p className="text-[#2b2524]/70 mt-0.5">Larks Creative House, Mangalore, Karnataka, India</p>
+                    <p className="text-[#2b2524]/70 mt-0.5">Larks Creative House, Uppinangady, Mangalore, Karnataka, India</p>
                   </div>
                 </div>
 
@@ -94,25 +94,7 @@ export default function ContactPage() {
                     </a>
                   </div>
                 </div>
-
-                <div className="flex items-start gap-3 pt-2 border-t border-[#b57c70]/10">
-                  <div className="p-2.5 bg-[#f5ebe8] text-[#b57c70] rounded-lg">
-                    <Clock className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-[#2b2524]">Crafting Hours</h4>
-                    <p className="text-[#2b2524]/70 mt-0.5">Monday – Saturday: 10:00 AM – 7:00 PM IST</p>
-                  </div>
-                </div>
               </div>
-            </div>
-
-            <div className="bg-[#2b2524] text-[#faf6f5] p-6 rounded-2xl space-y-2">
-              <span className="text-[10px] uppercase tracking-widest text-[#b57c70] font-bold">Mangalore Studio</span>
-              <h3 className="font-serif text-lg font-bold">Mangalore, Karnataka, India</h3>
-              <p className="text-xs text-[#faf6f5]/70 leading-relaxed">
-                Handcrafted with love in Coastal Karnataka & shipped across India.
-              </p>
             </div>
           </div>
 
