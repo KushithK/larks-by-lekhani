@@ -43,14 +43,20 @@ export default function App() {
         <div>
           <Navbar currentUser={currentUser} onLogout={handleLogout} />
           <Routes>
-            {/* PUBLIC STOREFRONT */}
             <Route path="/" element={<UserCatalog />} />
-            
-            {/* CUSTOMER SIGN IN & SIGN UP ONLY */}
             <Route path="/login" element={<AuthPage onLoginSuccess={handleLoginSuccess} />} />
             
-            {/* SECRET PRIVATE ADMIN LOGIN (FOR LEKHANI ONLY) */}
-            <Route path="/admin-login" element={<AdminLoginPage onLoginSuccess={handleLoginSuccess} />} />
+            {/* ADMIN LOGIN ROUTE (Redirects to /admin if already logged in) */}
+            <Route
+              path="/admin-login"
+              element={
+                currentUser && currentUser.role === 'admin' ? (
+                  <Navigate to="/admin" replace />
+                ) : (
+                  <AdminLoginPage onLoginSuccess={handleLoginSuccess} />
+                )
+              }
+            />
 
             <Route path="/product/:id" element={<ProductDetailPage />} />
             <Route path="/my-orders" element={<MyOrdersPage currentUser={currentUser} />} />
@@ -59,14 +65,14 @@ export default function App() {
             <Route path="/faqs" element={<FaqPage />} />
             <Route path="/reviews" element={<ReviewsPage />} />
             
-            {/* PROTECTED ADMIN ROUTE: Regular users are BLOCKED and redirected to '/' */}
+            {/* PROTECTED ADMIN DASHBOARD */}
             <Route
               path="/admin"
               element={
                 currentUser && currentUser.role === 'admin' ? (
                   <AdminDashboard />
                 ) : (
-                  <Navigate to="/" replace />
+                  <Navigate to="/admin-login" replace />
                 )
               }
             />

@@ -1,43 +1,54 @@
 import React, { useState } from 'react';
-import { ShieldCheck, KeyRound, ArrowRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { ShieldCheck, KeyRound, ArrowRight, CheckCircle2 } from 'lucide-react';
 
-const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
+const HARDCODED_ADMIN_USERNAME = "lekhani_admin";
+const HARDCODED_ADMIN_PASSWORD = "LarksStudio2026!";
 
 export default function AdminLoginPage({ onLoginSuccess }) {
+  const navigate = useNavigate();
   const [adminUsername, setAdminUsername] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
+  const [successPopup, setSuccessPopup] = useState(false);
 
-  const handleAdminLogin = async (e) => {
+  const handleAdminLogin = (e) => {
     e.preventDefault();
     setErrorMsg('');
     setLoading(true);
 
-    try {
-      const res = await fetch(`${LIVE_BACKEND_URL}/api/auth/admin/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: adminUsername, password: adminPassword })
-      });
-      const data = await res.json();
-      if (res.ok && data.success) {
-        localStorage.setItem('larks_token', data.token);
-        localStorage.setItem('larks_user', JSON.stringify(data.user));
-        onLoginSuccess(data.user);
-      } else {
-        setErrorMsg(data.message || 'Invalid admin username or password.');
-      }
-    } catch (err) {
-      setErrorMsg('Server connecting... (Render free server wakes up in 20 seconds on first load)');
-    } finally {
+    const inputUsername = adminUsername.trim();
+    const inputPassword = adminPassword.trim();
+
+    // INSTANT GUARANTEED UNLOCK (0.1s Verification)
+    if (inputUsername === HARDCODED_ADMIN_USERNAME && inputPassword === HARDCODED_ADMIN_PASSWORD) {
+      const adminUser = {
+        name: 'Lekhani (Admin)',
+        email: 'larksbylekhani@lbl.in',
+        role: 'admin'
+      };
+
+      const token = 'admin_session_' + Date.now();
+      localStorage.setItem('larks_token', token);
+      localStorage.setItem('larks_user', JSON.stringify(adminUser));
+
+      setSuccessPopup(true);
+
+      // Instant Redirect to Admin Dashboard
+      setTimeout(() => {
+        onLoginSuccess(adminUser);
+        navigate('/admin', { replace: true });
+      }, 800);
+    } else {
       setLoading(false);
+      setErrorMsg('Invalid Admin Username or Password. Please check and try again.');
     }
   };
 
   return (
     <div className="min-h-screen bg-[#faf6f5] flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl border border-[#b57c70]/30 shadow-2xl overflow-hidden space-y-6 p-8">
+      <div className="max-w-md w-full bg-white rounded-2xl border border-[#b57c70]/30 shadow-2xl overflow-hidden space-y-6 p-8 relative">
         
         <div className="text-center space-y-2">
           <div className="w-14 h-14 bg-[#2b2524] text-[#b57c70] rounded-full flex items-center justify-center mx-auto mb-2 shadow">
@@ -49,7 +60,7 @@ export default function AdminLoginPage({ onLoginSuccess }) {
           <h1 className="font-serif text-2xl font-bold text-[#2b2524]">
             Lekhani Studio Admin Login
           </h1>
-          <p className="text-xs text-[#2b2524]/60">Authorized owner access only.</p>
+          <p className="text-xs text-[#2b2524]/60">Authorized studio owner access only.</p>
         </div>
 
         {errorMsg && (
@@ -94,12 +105,26 @@ export default function AdminLoginPage({ onLoginSuccess }) {
             disabled={loading}
             className="w-full py-3 bg-[#2b2524] hover:bg-[#423b3a] text-white font-bold uppercase tracking-widest rounded transition-all flex items-center justify-center gap-2 shadow"
           >
-            <span>{loading ? 'Connecting to Server...' : 'Unlock Admin Portal'}</span>
+            <span>{loading ? 'Unlocking Admin Portal...' : 'Unlock Admin Portal'}</span>
             <ArrowRight className="w-4 h-4 text-[#b57c70]" />
           </button>
         </form>
 
       </div>
+
+      {/* UNLOCKED SUCCESS POPUP */}
+      {successPopup && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-[#b57c70]/30 animate-in fade-in">
+            <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow">
+              <CheckCircle2 className="w-8 h-8" />
+            </div>
+            <h3 className="font-serif text-xl font-bold text-[#2b2524]">Admin Portal Unlocked!</h3>
+            <p className="text-xs text-[#2b2524]/80">Welcome back, Lekhani! Opening your Admin Management Portal...</p>
+            <div className="w-6 h-6 border-2 border-[#b57c70] border-t-transparent rounded-full animate-spin mx-auto"></div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
