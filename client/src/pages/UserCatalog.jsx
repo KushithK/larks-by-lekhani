@@ -107,7 +107,7 @@ export default function UserCatalog() {
           <div className="pt-4 pb-2">
             <div className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-[#b57c70] mb-3">
               <Flame className="w-3.5 h-3.5 text-amber-500 fill-current animate-pulse" />
-              <span>Studio Highlights Reel</span>
+              <span>Studio Highlights</span>
             </div>
 
             {/* FLOATING ANIMATED REEL */}

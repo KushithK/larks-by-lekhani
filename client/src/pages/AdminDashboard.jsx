@@ -242,7 +242,7 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       alert('Error updating order status.');
-    } fontally {
+    }finally {
       setPendingAdvanceOrder(null);
       setPendingNextStatus('');
     }
