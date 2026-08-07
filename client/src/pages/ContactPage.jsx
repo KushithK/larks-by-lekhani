@@ -112,7 +112,7 @@ export default function ContactPage() {
             </div>
           </div>
 
-          {/* Contact Form */}
+          {/* Direct Message Form */}
           <div className="lg:col-span-7 bg-white rounded-2xl p-8 border border-[#b57c70]/20 shadow-sm">
             <h2 className="font-serif text-2xl font-bold text-[#2b2524] mb-1">Send Us a Direct Message</h2>
             <p className="text-xs text-[#2b2524]/60 mb-6">Fill out the form below and Lekhani's team will reply to your email within 24 hours.</p>
@@ -122,7 +122,7 @@ export default function ContactPage() {
                 <CheckCircle2 className="w-12 h-12 text-[#b57c70] mx-auto" />
                 <h3 className="font-serif text-xl font-bold text-[#2b2524]">Message Sent To Lekhani!</h3>
                 <p className="text-xs text-[#2b2524]/80 leading-relaxed">
-                  Thank you for reaching out. We have received your inquiry in our studio inbox and will respond shortly.
+                  Thank you for reaching out. Your message has been sent directly to our Admin Dashboard!
                 </p>
                 <button
                   onClick={() => setSubmitted(false)}

@@ -285,6 +285,7 @@ export default function AdminDashboard() {
             <h1 className="font-serif text-3xl font-bold text-[#2b2524]">Admin Management Portal</h1>
           </div>
 
+          {/* ADMIN TABS */}
           <div className="flex items-center bg-[#2b2524]/5 p-1 rounded-lg border border-[#b57c70]/20 flex-wrap">
             <button onClick={() => setActiveTab('products')} className={`px-4 py-2 rounded text-xs font-bold ${activeTab === 'products' ? 'bg-[#b57c70] text-white' : 'text-[#2b2524]'}`}>
               Products ({products.length})
@@ -292,9 +293,12 @@ export default function AdminDashboard() {
             <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded text-xs font-bold ${activeTab === 'orders' ? 'bg-[#b57c70] text-white' : 'text-[#2b2524]'}`}>
               Orders ({orders.length})
             </button>
+            
+            {/* CUSTOMER MESSAGES TAB BUTTON */}
             <button onClick={() => setActiveTab('messages')} className={`px-4 py-2 rounded text-xs font-bold ${activeTab === 'messages' ? 'bg-[#b57c70] text-white' : 'text-[#2b2524]'}`}>
               Customer Messages ({messages.length})
             </button>
+
             <button onClick={() => setActiveTab('highlights')} className={`px-4 py-2 rounded text-xs font-bold ${activeTab === 'highlights' ? 'bg-[#b57c70] text-white' : 'text-[#2b2524]'}`}>
               Highlights ({highlights.length})
             </button>
@@ -482,7 +486,7 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {/* CUSTOMER MESSAGES TAB */}
+        {/* CUSTOMER MESSAGES TAB (MESSAGES DISPLAY) */}
         {activeTab === 'messages' && (
           <div className="space-y-4">
             <div className="flex justify-between items-center mb-4">
