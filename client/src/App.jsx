@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import AuthPage from './pages/AuthPage';
-import AdminLoginPage from './pages/AdminLoginPage';
 import UserCatalog from './pages/UserCatalog';
 import ProductDetailPage from './pages/ProductDetailPage';
 import AboutUsPage from './pages/AboutUsPage';
@@ -44,20 +43,10 @@ export default function App() {
           <Navbar currentUser={currentUser} onLogout={handleLogout} />
           <Routes>
             <Route path="/" element={<UserCatalog />} />
+            
+            {/* SINGLE UNIFIED LOGIN PAGE */}
             <Route path="/login" element={<AuthPage onLoginSuccess={handleLoginSuccess} />} />
             
-            {/* ADMIN LOGIN ROUTE (Redirects to /admin if already logged in) */}
-            <Route
-              path="/admin-login"
-              element={
-                currentUser && currentUser.role === 'admin' ? (
-                  <Navigate to="/admin" replace />
-                ) : (
-                  <AdminLoginPage onLoginSuccess={handleLoginSuccess} />
-                )
-              }
-            />
-
             <Route path="/product/:id" element={<ProductDetailPage />} />
             <Route path="/my-orders" element={<MyOrdersPage currentUser={currentUser} />} />
             <Route path="/about" element={<AboutUsPage />} />
@@ -65,14 +54,14 @@ export default function App() {
             <Route path="/faqs" element={<FaqPage />} />
             <Route path="/reviews" element={<ReviewsPage />} />
             
-            {/* PROTECTED ADMIN DASHBOARD */}
+            {/* PROTECTED ADMIN DASHBOARD (Accessible only after admin login) */}
             <Route
               path="/admin"
               element={
                 currentUser && currentUser.role === 'admin' ? (
                   <AdminDashboard />
                 ) : (
-                  <Navigate to="/admin-login" replace />
+                  <Navigate to="/login" replace />
                 )
               }
             />

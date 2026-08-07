@@ -1,24 +1,31 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Lock, Mail, Sparkles, ArrowRight, UserPlus, CheckCircle2 } from 'lucide-react';
+import { User, Lock, Mail, Sparkles, ArrowRight, UserPlus, CheckCircle2, ShieldCheck } from 'lucide-react';
 
 const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 
+// SECRET ADMIN CREDENTIALS FOR AUTO-DETECTION
+const ADMIN_USERNAMES = ["lekhani_admin", "larksbylekhani@lbl.in", "admin@larks.com"];
+const ADMIN_PASSWORD = "LarksStudio2026!";
+
 export default function AuthPage({ onLoginSuccess }) {
   const navigate = useNavigate();
-  const [authMode, setAuthMode] = useState('user-login');
+  const [authMode, setAuthMode] = useState('user-login'); // 'user-login' | 'user-register'
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const [showLoginSuccessPopup, setShowLoginSuccessPopup] = useState(false);
+  // Pop-up Success States
+  const [showUserSuccessPopup, setShowUserSuccessPopup] = useState(false);
+  const [showAdminSuccessPopup, setShowAdminSuccessPopup] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
 
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // 1. SIGN UP (REGISTER)
   const handleUserRegister = async (e) => {
     e.preventDefault();
     setErrorMsg(''); setSuccessMsg(''); setLoading(true);
@@ -43,15 +50,43 @@ export default function AuthPage({ onLoginSuccess }) {
     }
   };
 
+  // 2. UNIFIED SIGN IN (AUTODETECTS ADMIN vs CUSTOMER)
   const handleUserLogin = async (e) => {
     e.preventDefault();
     setErrorMsg(''); setSuccessMsg(''); setLoading(true);
 
+    const inputEmail = formData.email.trim();
+    const inputPassword = formData.password.trim();
+
+    // 🔑 SECRET ADMIN DETECTION (Direct Redirect to /admin)
+    const isAdmin = ADMIN_USERNAMES.includes(inputEmail.toLowerCase()) && inputPassword === ADMIN_PASSWORD;
+
+    if (isAdmin) {
+      const adminUser = {
+        name: 'Lekhani (Admin)',
+        email: 'larksbylekhani@lbl.in',
+        role: 'admin'
+      };
+
+      localStorage.setItem('larks_token', 'admin_session_' + Date.now());
+      localStorage.setItem('larks_user', JSON.stringify(adminUser));
+
+      setLoggedInUser(adminUser);
+      setShowAdminSuccessPopup(true); // SHOW ADMIN UNLOCKED POPUP
+
+      setTimeout(() => {
+        onLoginSuccess(adminUser);
+        navigate('/admin', { replace: true }); // DIRECT REDIRECT TO ADMIN DASHBOARD
+      }, 1000);
+      return;
+    }
+
+    // REGULAR CUSTOMER LOGIN (Direct Redirect to /)
     try {
       const res = await fetch(`${LIVE_BACKEND_URL}/api/auth/user/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: formData.email, password: formData.password })
+        body: JSON.stringify({ email: inputEmail, password: inputPassword })
       });
       const data = await res.json();
       if (res.ok && data.success) {
@@ -59,12 +94,12 @@ export default function AuthPage({ onLoginSuccess }) {
         localStorage.setItem('larks_user', JSON.stringify(data.user));
         
         setLoggedInUser(data.user);
-        setShowLoginSuccessPopup(true);
+        setShowUserSuccessPopup(true); // SHOW USER SUCCESS POPUP
 
         setTimeout(() => {
           onLoginSuccess(data.user);
-          navigate('/');
-        }, 1200);
+          navigate('/'); // DIRECT REDIRECT TO HOME STOREFRONT
+        }, 1000);
       } else {
         setErrorMsg(data.message || 'Invalid email or password.');
       }
@@ -79,6 +114,7 @@ export default function AuthPage({ onLoginSuccess }) {
     <div className="min-h-screen bg-[#faf6f5] flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-2xl border border-[#b57c70]/20 shadow-xl overflow-hidden relative">
         
+        {/* Header */}
         <div className="bg-[#2b2524] text-[#faf6f5] p-8 text-center relative">
           <div className="w-12 h-12 bg-[#b57c70] text-white rounded-full flex items-center justify-center mx-auto mb-3 shadow">
             <Sparkles className="w-6 h-6" />
@@ -87,6 +123,7 @@ export default function AuthPage({ onLoginSuccess }) {
           <p className="text-xs text-[#faf6f5]/70 mt-1">Artisanal Custom Handcrafted Gift & Jewelry Studio</p>
         </div>
 
+        {/* Mode Tabs */}
         <div className="flex border-b border-[#b57c70]/20 bg-[#faf6f5]">
           <button
             onClick={() => { setAuthMode('user-login'); setErrorMsg(''); }}
@@ -110,19 +147,20 @@ export default function AuthPage({ onLoginSuccess }) {
           {errorMsg && <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded border border-rose-200">{errorMsg}</div>}
           {successMsg && <div className="p-3 bg-emerald-50 text-emerald-700 text-xs rounded border border-emerald-200">{successMsg}</div>}
 
+          {/* UNIFIED LOGIN FORM */}
           {authMode === 'user-login' && (
             <form onSubmit={handleUserLogin} className="space-y-4 text-xs">
               <div>
-                <label className="block font-semibold text-[#2b2524] mb-1">Email Address</label>
+                <label className="block font-semibold text-[#2b2524] mb-1">Email / Username</label>
                 <div className="relative">
                   <Mail className="w-4 h-4 absolute left-3 top-2.5 text-[#2b2524]/40" />
                   <input
-                    type="email"
+                    type="text"
                     name="email"
                     required
                     value={formData.email}
                     onChange={handleInputChange}
-                    placeholder="e.g. customer@example.com"
+                    placeholder="Enter email or admin username"
                     className="w-full pl-9 pr-3 py-2.5 rounded border border-[#2b2524]/20 bg-[#faf6f5] focus:outline-none focus:border-[#b57c70]"
                   />
                 </div>
@@ -147,12 +185,13 @@ export default function AuthPage({ onLoginSuccess }) {
                 disabled={loading}
                 className="w-full py-3 bg-[#b57c70] hover:bg-[#9e675b] text-white font-bold uppercase tracking-widest rounded transition-all flex items-center justify-center gap-2 shadow"
               >
-                <span>{loading ? 'Connecting to Server...' : 'Sign In to Store'}</span>
+                <span>{loading ? 'Authenticating...' : 'Sign In to Store'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </form>
           )}
 
+          {/* USER REGISTER FORM */}
           {authMode === 'user-register' && (
             <form onSubmit={handleUserRegister} className="space-y-4 text-xs">
               <div>
@@ -214,7 +253,8 @@ export default function AuthPage({ onLoginSuccess }) {
 
       </div>
 
-      {showLoginSuccessPopup && (
+      {/* CUSTOMER SUCCESS POPUP */}
+      {showUserSuccessPopup && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-[#b57c70]/30 animate-in fade-in zoom-in">
             <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow">
@@ -223,7 +263,27 @@ export default function AuthPage({ onLoginSuccess }) {
 
             <h3 className="font-serif text-xl font-bold text-[#2b2524]">Successfully Signed In!</h3>
             <p className="text-xs text-[#2b2524]/80 leading-relaxed font-medium">
-              Welcome back, <strong className="text-[#b57c70]">{loggedInUser?.name}</strong>! Redirecting you directly to the storefront...
+              Welcome back, <strong className="text-[#b57c70]">{loggedInUser?.name}</strong>! Redirecting you to the storefront...
+            </p>
+
+            <div className="pt-2">
+              <div className="w-6 h-6 border-2 border-[#b57c70] border-t-transparent rounded-full animate-spin mx-auto"></div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADMIN UNLOCKED POPUP */}
+      {showAdminSuccessPopup && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-[#b57c70]/30 animate-in fade-in zoom-in">
+            <div className="w-14 h-14 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow">
+              <ShieldCheck className="w-8 h-8" />
+            </div>
+
+            <h3 className="font-serif text-xl font-bold text-[#2b2524]">Admin Portal Unlocked!</h3>
+            <p className="text-xs text-[#2b2524]/80 leading-relaxed font-medium">
+              Welcome back, Lekhani! Opening your Admin Management Portal...
             </p>
 
             <div className="pt-2">
