@@ -1,7 +1,42 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit3, Trash2, RefreshCw, Package, ShoppingBag, X, Save, ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon, CheckCircle2, Upload } from 'lucide-react';
+import { Plus, Edit3, Trash2, RefreshCw, X, Save, ShieldCheck, MapPin, Phone, Type, Link as LinkIcon, Image as ImageIcon, CheckCircle2, Upload } from 'lucide-react';
 
 const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
+
+// AUTOMATIC CANVAS COMPRESSOR (Shrinks phone/camera photos so they load fast)
+const compressImageFile = (file, maxWidth = 800, maxHeight = 800, quality = 0.7) => {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width);
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height);
+            height = maxHeight;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+    };
+  });
+};
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('products');
@@ -10,17 +45,16 @@ export default function AdminDashboard() {
   const [showProductModal, setShowProductModal] = useState(false);
   const [showSaveSuccessPopup, setShowSaveSuccessPopup] = useState(false);
   
-  // productFormData.images is managed as a REAL ARRAY of photos
+  // DIRECT FILE PHOTOS ARRAY
   const [productFormData, setProductFormData] = useState({
     title: '',
     category: 'Photo Frames',
     basePrice: '',
-    images: [], // Array of 1 to 10 photo URLs / Base64
+    images: [],
     description: '',
     artisanalDetails: ''
   });
 
-  const [imageUrlInput, setImageUrlInput] = useState('');
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
@@ -47,7 +81,6 @@ export default function AdminDashboard() {
   const openAddModal = () => {
     setEditingProduct(null);
     setProductFormData({ title: '', category: 'Photo Frames', basePrice: '', images: [], description: '', artisanalDetails: '' });
-    setImageUrlInput('');
     setShowProductModal(true);
   };
 
@@ -69,40 +102,23 @@ export default function AdminDashboard() {
       description: product.description,
       artisanalDetails: Array.isArray(product.artisanalDetails) ? product.artisanalDetails.join(', ') : ''
     });
-    setImageUrlInput('');
     setShowProductModal(true);
   };
 
-  // UPLOAD UP TO 10 PHOTOS FROM FILE PICKER
-  const handleProductPhotoFileUpload = (e) => {
+  // DIRECT FILE UPLOAD HANDLER
+  const handleProductPhotoFileUpload = async (e) => {
     const files = Array.from(e.target.files);
-    files.forEach(file => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProductFormData(prev => {
-          if (prev.images.length >= 10) {
-            alert('Maximum 10 photos allowed per product.');
-            return prev;
-          }
-          return { ...prev, images: [...prev.images, reader.result] };
-        });
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  // ADD PHOTO BY URL
-  const handleAddImageUrl = () => {
-    if (!imageUrlInput.trim()) return;
-    if (productFormData.images.length >= 10) {
-      alert('Maximum 10 photos allowed per product.');
-      return;
+    for (const file of files) {
+      if (productFormData.images.length >= 10) {
+        alert('Maximum 10 photos allowed per product.');
+        break;
+      }
+      const compressedBase64 = await compressImageFile(file);
+      setProductFormData(prev => ({
+        ...prev,
+        images: [...prev.images, compressedBase64]
+      }));
     }
-    setProductFormData(prev => ({
-      ...prev,
-      images: [...prev.images, imageUrlInput.trim()]
-    }));
-    setImageUrlInput('');
   };
 
   const handleRemoveProductPhoto = (indexToRemove) => {
@@ -153,6 +169,12 @@ export default function AdminDashboard() {
     fetchOrders();
   };
 
+  const getImageList = (imagesData) => {
+    if (Array.isArray(imagesData)) return imagesData;
+    if (typeof imagesData === 'string') return imagesData.split(',').map(s=>s.trim()).filter(Boolean);
+    return [];
+  };
+
   return (
     <div className="min-h-screen bg-[#faf6f5] py-10 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
@@ -187,7 +209,7 @@ export default function AdminDashboard() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.map((p) => {
-                const imgList = Array.isArray(p.images) ? p.images : (typeof p.images === 'string' ? p.images.split(',').map(s=>s.trim()).filter(Boolean) : []);
+                const imgList = getImageList(p.images);
 
                 return (
                   <div key={p._id} className="bg-white rounded-xl border border-[#b57c70]/20 p-5 shadow-sm flex flex-col justify-between">
@@ -201,7 +223,6 @@ export default function AdminDashboard() {
                         </span>
                       </div>
 
-                      {/* Photo Thumbnail Strip */}
                       {imgList.length > 0 && (
                         <div className="aspect-video w-full rounded-lg overflow-hidden bg-[#faf6f5] mb-3 border border-[#2b2524]/5 relative">
                           <img src={imgList[0]} alt={p.title} className="w-full h-full object-cover" />
@@ -279,7 +300,6 @@ export default function AdminDashboard() {
                     <p className="font-bold text-[#2b2524] text-[10px] uppercase tracking-wider flex items-center gap-1">
                       <Type className="w-3.5 h-3.5 text-[#b57c70]" /> Customer Idea & Requirements:
                     </p>
-                    
                     <p className="text-[#2b2524]/90 leading-relaxed italic bg-white p-2 rounded border border-[#b57c70]/10">
                       "{o.customizationDetails}"
                     </p>
@@ -316,14 +336,14 @@ export default function AdminDashboard() {
 
       </div>
 
-      {/* EDIT / ADD PRODUCT MODAL (SUPPORTS UP TO 10 PHOTOS) */}
+      {/* EDIT / ADD PRODUCT MODAL (DIRECT FILE PICKER ONLY) */}
       {showProductModal && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl max-w-xl w-full p-6 border border-[#b57c70]/30 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b pb-3 mb-4">
               <div>
                 <h3 className="font-serif text-lg font-bold text-[#2b2524]">{editingProduct ? 'Update Product Details' : 'Add New Item'}</h3>
-                <p className="text-[10px] text-[#b57c70] font-semibold">Upload 1, 2, 3... up to 10 photos per product</p>
+                <p className="text-[10px] text-[#b57c70] font-semibold">Select 1, 2, 3... up to 10 photos directly from your computer/phone</p>
               </div>
               <button onClick={() => setShowProductModal(false)}><X className="w-5 h-5" /></button>
             </div>
@@ -355,17 +375,17 @@ export default function AdminDashboard() {
                 </div>
               </div>
 
-              {/* MULTI-PHOTO UPLOAD SECTION (UP TO 10 PHOTOS) */}
+              {/* DIRECT PHOTO FILE UPLOADER ONLY */}
               <div className="bg-[#f5ebe8]/50 p-4 rounded-xl border border-[#b57c70]/20 space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="block font-bold text-[#2b2524] flex items-center gap-1.5">
-                    <ImageIcon className="w-4 h-4 text-[#b57c70]" /> Item Photos ({productFormData.images.length} / 10 Added)
+                    <ImageIcon className="w-4 h-4 text-[#b57c70]" /> Upload Product Photos ({productFormData.images.length} / 10 Selected)
                   </label>
                   <span className="text-[10px] text-[#b57c70] font-bold">Max 10 Photos</span>
                 </div>
 
-                {/* Upload File Box */}
-                <div className="border-2 border-dashed border-[#b57c70]/40 hover:border-[#b57c70] rounded-xl p-3 bg-white text-center cursor-pointer relative transition-all">
+                {/* Direct File Picker Box */}
+                <div className="border-2 border-dashed border-[#b57c70]/40 hover:border-[#b57c70] rounded-xl p-4 bg-white text-center cursor-pointer relative transition-all">
                   <input
                     type="file"
                     accept="image/*"
@@ -373,16 +393,16 @@ export default function AdminDashboard() {
                     onChange={handleProductPhotoFileUpload}
                     className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
                   />
-                  <Upload className="w-5 h-5 text-[#b57c70] mx-auto mb-1" />
-                  <p className="text-xs font-bold text-[#2b2524]">Click or Drag Photos Here to Upload</p>
-                  <p className="text-[10px] text-[#2b2524]/60">Select 1, 2, 3, 4, 5... up to 10 photos from phone/PC</p>
+                  <Upload className="w-6 h-6 text-[#b57c70] mx-auto mb-1" />
+                  <p className="text-xs font-bold text-[#2b2524]">Click Here to Select Photos from Your PC/Phone</p>
+                  <p className="text-[10px] text-[#2b2524]/60">Select 1, 2, 3, 4... up to 10 picture files</p>
                 </div>
 
-                {/* Added Photos Thumbnail Gallery */}
+                {/* Uploaded Photo Thumbnail Previews */}
                 {productFormData.images.length > 0 && (
                   <div className="pt-2">
                     <p className="text-[10px] font-bold uppercase text-[#b57c70] mb-1.5">
-                      Attached Product Photos ({productFormData.images.length}):
+                      Selected Photos ({productFormData.images.length}):
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {productFormData.images.map((imgUrl, idx) => (
@@ -401,24 +421,6 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 )}
-
-                {/* Add Photo by URL option */}
-                <div className="pt-2 border-t border-[#b57c70]/15 flex gap-2">
-                  <input
-                    type="text"
-                    value={imageUrlInput}
-                    onChange={(e) => setImageUrlInput(e.target.value)}
-                    placeholder="Or paste direct image URL (https://i.postimg.cc/car1.jpg)"
-                    className="flex-1 p-2 border rounded border-[#2b2524]/20 bg-white text-[11px]"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleAddImageUrl}
-                    className="px-3 py-2 bg-[#2b2524] text-white font-bold text-[11px] rounded"
-                  >
-                    Add URL
-                  </button>
-                </div>
               </div>
 
               <div>
@@ -428,7 +430,7 @@ export default function AdminDashboard() {
 
               <button type="submit" className="w-full py-3 bg-[#b57c70] text-white font-bold uppercase rounded shadow hover:bg-[#9e675b] transition-all flex items-center justify-center gap-1.5">
                 <Save className="w-4 h-4" />
-                <span>Save Item Details ({productFormData.images.length} Photos)</span>
+                <span>Save Item Details ({productFormData.images.length} Photos Selected)</span>
               </button>
             </form>
           </div>
@@ -445,7 +447,7 @@ export default function AdminDashboard() {
 
             <h3 className="font-serif text-xl font-bold text-[#2b2524]">Successfully Saved!</h3>
             <p className="text-xs text-[#2b2524]/80 leading-relaxed font-medium">
-              Product details and all uploaded photos have been saved to your studio inventory.
+              Product details and all selected photos have been saved to your studio inventory.
             </p>
 
             <button
