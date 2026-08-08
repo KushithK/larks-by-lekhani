@@ -1,17 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   Star, Minus, Plus, ShoppingBag, ArrowLeft, CheckCircle2, ShieldCheck, 
   X, Lock, ChevronLeft, ChevronRight, Truck, UserCheck,
   Check, User, QrCode, Link as LinkIcon, Sparkles,
-  Upload, Image as ImageIcon, AlertCircle
+  Upload, Image as ImageIcon, AlertCircle, LogIn
 } from 'lucide-react';
 
 const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 const YOUR_REAL_UPI_ID = "larksbylekhani@upi";
 const STUDIO_BUSINESS_NAME = "Larks by Lekhani";
 
-// FAIL-SAFE MULTI-PHOTO CATALOG
+// FALLBACK MULTI-PHOTO CATALOG
 const FALLBACK_CATALOG = [
   {
     _id: "1",
@@ -21,8 +21,7 @@ const FALLBACK_CATALOG = [
     category: "Gift Albums",
     images: [
       "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1512820790803-83ca734da794?q=80&w=800&auto=format&fit=crop"
+      "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"
     ],
     description: "A compact handcrafted birthday memory album book with interactive flip tabs, pull-out photo sleeves, and cute birthday prompts."
   },
@@ -32,10 +31,7 @@ const FALLBACK_CATALOG = [
     basePrice: 149,
     discountPercent: 50,
     category: "Keychains",
-    images: [
-      "https://images.unsplash.com/photo-1611591475171-d41c10d32cb5?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?q=80&w=800&auto=format&fit=crop"
-    ],
+    images: ["https://images.unsplash.com/photo-1611591475171-d41c10d32cb5?q=80&w=800&auto=format&fit=crop"],
     description: "Charming small gift keychain featuring real pressed dried flowers, subtle foil accents, and a durable antique brass ring."
   },
   {
@@ -44,10 +40,7 @@ const FALLBACK_CATALOG = [
     basePrice: 999,
     discountPercent: 40,
     category: "Gift Boxes",
-    images: [
-      "https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1513885535751-8b9238bd454a?q=80&w=800&auto=format&fit=crop"
-    ],
+    images: ["https://images.unsplash.com/photo-1549465220-1a8b9238cd48?q=80&w=800&auto=format&fit=crop"],
     description: "A delightful small bird-themed gift box curated with ribbon, a dainty necklace, custom keychain, sticker pack, hair clips, earrings, and a face mask."
   },
   {
@@ -83,11 +76,7 @@ const FALLBACK_CATALOG = [
     basePrice: 899,
     discountPercent: 50,
     category: "Photo Frames",
-    images: [
-      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1582562124811-c09040d0a901?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"
-    ],
+    images: ["https://images.unsplash.com/photo-1503376780353-7e6692767b70?q=80&w=800&auto=format&fit=crop"],
     description: "Bespoke 3D shadow box frame designed specifically to display your favorite die-cast model car with custom background graphics."
   },
   {
@@ -96,10 +85,7 @@ const FALLBACK_CATALOG = [
     basePrice: 649,
     discountPercent: 50,
     category: "Photo Frames",
-    images: [
-      "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1582562124811-c09040d0a901?q=80&w=800&auto=format&fit=crop"
-    ],
+    images: ["https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"],
     description: "Handmade wooden memory photo frame customized with your favorite photographs, dried botanicals, and personalized names."
   }
 ];
@@ -125,8 +111,11 @@ const INITIAL_REVIEWS = [
   }
 ];
 
-export default function ProductDetailPage() {
+export default function ProductDetailPage({ currentUser }) {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -136,6 +125,8 @@ export default function ProductDetailPage() {
   const [showCheckout, setShowCheckout] = useState(false);
   const [showCodAlert, setShowCodAlert] = useState(false);
   const [showFormRequiredAlert, setShowFormRequiredAlert] = useState(false);
+  const [formValidationMessage, setFormValidationMessage] = useState('Fill the form and then proceed to continue.');
+  const [showLoginRequiredModal, setShowLoginRequiredModal] = useState(false);
   const [showRazorpayModal, setShowRazorpayModal] = useState(false);
   const [selectedUpiApp, setSelectedUpiApp] = useState('PhonePe');
   const [isProcessingRazorpay, setIsProcessingRazorpay] = useState(false);
@@ -154,10 +145,10 @@ export default function ProductDetailPage() {
   // Shipping Form State
   const [paymentMethod, setPaymentMethod] = useState('online');
   const [shippingForm, setShippingForm] = useState({
-    contactEmail: '',
+    contactEmail: currentUser ? currentUser.email : '',
     contactPhone: '',
-    firstName: '',
-    lastName: '',
+    firstName: currentUser ? currentUser.name.split(' ')[0] : '',
+    lastName: currentUser ? (currentUser.name.split(' ')[1] || '') : '',
     houseNo: '',
     landmark: '',
     streetAddress: '',
@@ -172,7 +163,11 @@ export default function ProductDetailPage() {
 
   useEffect(() => {
     fetchProduct();
-  }, [id]);
+    // Auto-open checkout if returning after sign-in
+    if (location.search.includes('checkout=true')) {
+      setShowCheckout(true);
+    }
+  }, [id, location]);
 
   const fetchProduct = async () => {
     setLoading(true);
@@ -180,25 +175,13 @@ export default function ProductDetailPage() {
       const response = await fetch(`${LIVE_BACKEND_URL}/api/products/${id}`);
       if (response.ok) {
         const data = await response.json();
-        
-        let parsedImgs = [];
-        if (Array.isArray(data.images) && data.images.length > 0) {
-          parsedImgs = data.images;
-        } else if (typeof data.images === 'string' && data.images.length > 0) {
-          parsedImgs = data.images.split(',').map(s=>s.trim()).filter(Boolean);
-        }
-
-        if (parsedImgs.length === 0) {
-          parsedImgs = ["https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop"];
-        }
-
+        let parsedImgs = Array.isArray(data.images) ? data.images : (typeof data.images === 'string' ? data.images.split(',').map(s=>s.trim()).filter(Boolean) : []);
+        if (parsedImgs.length === 0) parsedImgs = ["https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop"];
         setProduct({ ...data, images: parsedImgs });
         setLoading(false);
         return;
       }
-    } catch (err) {
-      console.error('Fetching error:', err);
-    }
+    } catch (err) {}
 
     const matched = FALLBACK_CATALOG.find(p => p._id === String(id)) || FALLBACK_CATALOG[0];
     setProduct(matched);
@@ -228,6 +211,18 @@ export default function ProductDetailPage() {
     setShippingForm({ ...shippingForm, [e.target.name]: e.target.value });
   };
 
+  // CHECK LOGIN BEFORE CHECKOUT
+  const handleOpenCheckout = () => {
+    const storedUser = localStorage.getItem('larks_user');
+    if (!storedUser && !currentUser) {
+      // User is NOT logged in -> Save redirect memory and open Sign In Modal
+      localStorage.setItem('larks_redirect_product', `/product/${id}?checkout=true`);
+      setShowLoginRequiredModal(true);
+      return;
+    }
+    setShowCheckout(true);
+  };
+
   const handlePhotoFileUpload = (e) => {
     const files = Array.from(e.target.files);
     files.forEach(file => {
@@ -248,6 +243,7 @@ export default function ProductDetailPage() {
     setShowCodAlert(true);
   };
 
+  // FORM VALIDATION CHECK (STRICT 10-DIGIT PHONE & REAL EMAIL CHECK)
   const handleProceedToPayment = (e) => {
     e.preventDefault();
 
@@ -256,9 +252,25 @@ export default function ProductDetailPage() {
       return;
     }
 
-    const isContactAndDeliveryValid = 
-      shippingForm.contactEmail.trim() !== '' &&
-      shippingForm.contactPhone.trim() !== '' &&
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^[0-9]{10}$/;
+
+    const emailVal = shippingForm.contactEmail.trim();
+    const phoneVal = shippingForm.contactPhone.trim();
+
+    if (!emailRegex.test(emailVal)) {
+      setFormValidationMessage("Please enter a valid email address (e.g. name@example.com).");
+      setShowFormRequiredAlert(true);
+      return;
+    }
+
+    if (!phoneRegex.test(phoneVal)) {
+      setFormValidationMessage("Please enter a valid 10-digit mobile phone number (numbers only).");
+      setShowFormRequiredAlert(true);
+      return;
+    }
+
+    const isAddressValid = 
       shippingForm.firstName.trim() !== '' &&
       shippingForm.lastName.trim() !== '' &&
       shippingForm.houseNo.trim() !== '' &&
@@ -267,7 +279,8 @@ export default function ProductDetailPage() {
       shippingForm.state.trim() !== '' &&
       shippingForm.pincode.trim() !== '';
 
-    if (!isContactAndDeliveryValid) {
+    if (!isAddressValid) {
+      setFormValidationMessage("Fill the form and then proceed to continue. Please complete your delivery address details.");
       setShowFormRequiredAlert(true);
       return;
     }
@@ -293,11 +306,13 @@ export default function ProductDetailPage() {
     setTimeout(async () => {
       setProcessingStepText('Verifying Transaction with Bank...');
 
+      const userAccount = currentUser || JSON.parse(localStorage.getItem('larks_user') || '{}');
+
       const payload = {
         productId: product._id,
         productTitle: product.title,
         customerName: `${shippingForm.firstName} ${shippingForm.lastName}`.trim(),
-        customerEmail: shippingForm.contactEmail,
+        customerEmail: userAccount.email || shippingForm.contactEmail.toLowerCase(),
         contactNumber: shippingForm.contactPhone,
         address: {
           houseNo: shippingForm.houseNo,
@@ -316,6 +331,11 @@ export default function ProductDetailPage() {
         paymentMethod: `Real UPI Payment (${selectedUpiApp})`,
         paymentStatus: 'Paid - Verified'
       };
+
+      // Save locally to ensure instant "My Orders" visibility
+      const existingPlaced = JSON.parse(localStorage.getItem('larks_placed_orders') || '[]');
+      const savedOrder = { _id: 'LBL-' + Math.floor(100000 + Math.random() * 900000), ...payload, status: 'Pending Review', createdAt: new Date().toISOString() };
+      localStorage.setItem('larks_placed_orders', JSON.stringify([savedOrder, ...existingPlaced]));
 
       try {
         const res = await fetch(`${LIVE_BACKEND_URL}/api/orders`, {
@@ -340,17 +360,7 @@ export default function ProductDetailPage() {
         setIsProcessingRazorpay(false);
         setShowRazorpayModal(false);
         setShowCheckout(false);
-        setOrderConfirmed({
-          _id: 'LBL-' + Math.floor(100000 + Math.random() * 900000),
-          productTitle: product.title,
-          quantity,
-          totalAmount: grandTotal,
-          customerName: `${shippingForm.firstName} ${shippingForm.lastName}`,
-          contactNumber: shippingForm.contactPhone,
-          address: { houseNo: shippingForm.houseNo, street: shippingForm.streetAddress, city: shippingForm.city, state: shippingForm.state, pincode: shippingForm.pincode },
-          paymentMethod: `Online Payment (${selectedUpiApp})`,
-          attachedPhotos
-        });
+        setOrderConfirmed(savedOrder);
       }, 1200);
     }, 1500);
   };
@@ -441,7 +451,7 @@ export default function ProductDetailPage() {
                 to="/my-orders"
                 className="px-6 py-3 bg-[#b57c70] text-white text-xs font-bold uppercase tracking-widest rounded-md hover:bg-[#9e675b] transition-all shadow"
               >
-                Track Live Order Status & Review
+                Track Live Order Status
               </Link>
               <Link
                 to="/"
@@ -452,7 +462,7 @@ export default function ProductDetailPage() {
             </div>
           </div>
         ) : (
-          /* PRODUCT DETAIL & MULTI-PHOTO SLIDER WITH THUMBNAIL STRIP */
+          /* PRODUCT DETAIL & SLIDER */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
             
             <div className="lg:col-span-5 space-y-4">
@@ -461,10 +471,6 @@ export default function ProductDetailPage() {
                   src={productImages[currentImageIndex] || 'https://via.placeholder.com/600'}
                   alt={product.title}
                   className="w-full h-full object-cover transition-all duration-300"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = 'https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop';
-                  }}
                 />
 
                 {productImages.length > 1 && (
@@ -511,10 +517,6 @@ export default function ProductDetailPage() {
                           src={imgUrl} 
                           alt={`Thumbnail ${idx + 1}`} 
                           className="w-full h-full object-cover"
-                          onError={(e) => {
-                            e.target.onerror = null;
-                            e.target.src = 'https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=800&auto=format&fit=crop';
-                          }} 
                         />
                       </button>
                     ))}
@@ -583,7 +585,7 @@ export default function ProductDetailPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                   <button
-                    onClick={() => setShowCheckout(true)}
+                    onClick={handleOpenCheckout}
                     className="py-3.5 px-6 rounded-lg border border-[#b57c70] text-[#b57c70] hover:bg-[#f5ebe8] text-xs font-bold uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm"
                   >
                     <ShoppingBag className="w-4 h-4" />
@@ -591,7 +593,7 @@ export default function ProductDetailPage() {
                   </button>
 
                   <button
-                    onClick={() => setShowCheckout(true)}
+                    onClick={handleOpenCheckout}
                     className="py-3.5 px-6 rounded-lg bg-[#b57c70] hover:bg-[#9e675b] text-white text-xs font-bold uppercase tracking-wider shadow-md transition-all"
                   >
                     Buy it now
@@ -655,6 +657,34 @@ export default function ProductDetailPage() {
         )}
 
       </div>
+
+      {/* LOGIN REQUIRED GATEKEEPER MODAL */}
+      {showLoginRequiredModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-[#b57c70]/30 animate-in fade-in zoom-in">
+            <div className="w-14 h-14 bg-[#f5ebe8] text-[#b57c70] rounded-full flex items-center justify-center mx-auto shadow">
+              <LogIn className="w-7 h-7" />
+            </div>
+
+            <h3 className="font-serif text-xl font-bold text-[#2b2524]">Sign In to Continue Order</h3>
+            <p className="text-xs text-[#2b2524]/80 leading-relaxed font-medium">
+              Please sign up or log in to complete your order for <strong className="text-[#b57c70]">{product.title}</strong>.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowLoginRequiredModal(false);
+                navigate('/login');
+              }}
+              className="w-full py-3 bg-[#b57c70] hover:bg-[#9e675b] text-white text-xs font-bold uppercase tracking-wider rounded-md shadow transition-all flex items-center justify-center gap-2"
+            >
+              <LogIn className="w-4 h-4" />
+              <span>Proceed to Sign In / Sign Up</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* CHECKOUT MODAL */}
       {showCheckout && !orderConfirmed && (
@@ -777,13 +807,17 @@ export default function ProductDetailPage() {
                   </div>
 
                   <div>
-                    <label className="block font-bold text-[#2b2524] uppercase mb-1">Contact Phone Number *</label>
+                    <label className="block font-bold text-[#2b2524] uppercase mb-1">Contact Phone Number (10 Digits Only) *</label>
                     <input
                       type="tel"
                       name="contactPhone"
+                      maxLength={10}
                       value={shippingForm.contactPhone}
-                      onChange={handleInputChange}
-                      placeholder="10-digit mobile number"
+                      onChange={(e) => {
+                        const numericOnly = e.target.value.replace(/\D/g, ''); // Filter non-digits
+                        setShippingForm({ ...shippingForm, contactPhone: numericOnly });
+                      }}
+                      placeholder="10-digit number (e.g. 9876543210)"
                       className="w-full p-2.5 rounded border border-[#2b2524]/20 bg-[#faf6f5]"
                     />
                   </div>
@@ -966,7 +1000,7 @@ export default function ProductDetailPage() {
 
             <h3 className="font-serif text-lg font-bold text-[#2b2524]">Incomplete Delivery Info</h3>
             <p className="text-xs text-[#2b2524]/80 leading-relaxed font-medium">
-              Fill the form and then proceed to continue. Please complete your delivery name, contact number, and address details before going to payment.
+              {formValidationMessage}
             </p>
 
             <button
@@ -1037,7 +1071,7 @@ export default function ProductDetailPage() {
               </div>
 
               <div className="space-y-2">
-                <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Recommended</p>
+                <p className="text-[11px] font-bold text-[#faf6f5]/80 uppercase tracking-wider">Recommended</p>
                 <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 overflow-hidden shadow-sm">
                   {[
                     { id: 'Google Pay', name: 'UPI - Google Pay', color: 'bg-emerald-500', logo: 'GPay' },

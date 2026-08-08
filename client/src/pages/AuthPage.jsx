@@ -4,19 +4,17 @@ import { User, Lock, Mail, Sparkles, ArrowRight, UserPlus, CheckCircle2, ShieldC
 
 const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 
-// SECRET ADMIN CREDENTIALS FOR AUTO-DETECTION
 const ADMIN_USERNAMES = ["lekhani_admin", "larksbylekhani@lbl.in", "admin@larks.com"];
 const ADMIN_PASSWORD = "LarksStudio2026!";
 
 export default function AuthPage({ onLoginSuccess }) {
   const navigate = useNavigate();
-  const [authMode, setAuthMode] = useState('user-login'); // 'user-login' | 'user-register'
+  const [authMode, setAuthMode] = useState('user-login');
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // Pop-up Success States
   const [showUserSuccessPopup, setShowUserSuccessPopup] = useState(false);
   const [showAdminSuccessPopup, setShowAdminSuccessPopup] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState(null);
@@ -25,7 +23,17 @@ export default function AuthPage({ onLoginSuccess }) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // 1. SIGN UP (REGISTER)
+  const redirectAfterAuth = (user) => {
+    onLoginSuccess(user);
+    const savedRedirect = localStorage.getItem('larks_redirect_product');
+    if (savedRedirect) {
+      localStorage.removeItem('larks_redirect_product');
+      navigate(savedRedirect); // Return to product checkout!
+    } else {
+      navigate('/');
+    }
+  };
+
   const handleUserRegister = async (e) => {
     e.preventDefault();
     setErrorMsg(''); setSuccessMsg(''); setLoading(true);
@@ -50,7 +58,6 @@ export default function AuthPage({ onLoginSuccess }) {
     }
   };
 
-  // 2. UNIFIED SIGN IN (AUTODETECTS ADMIN vs CUSTOMER)
   const handleUserLogin = async (e) => {
     e.preventDefault();
     setErrorMsg(''); setSuccessMsg(''); setLoading(true);
@@ -58,7 +65,6 @@ export default function AuthPage({ onLoginSuccess }) {
     const inputEmail = formData.email.trim();
     const inputPassword = formData.password.trim();
 
-    // 🔑 SECRET ADMIN DETECTION (Direct Redirect to /admin)
     const isAdmin = ADMIN_USERNAMES.includes(inputEmail.toLowerCase()) && inputPassword === ADMIN_PASSWORD;
 
     if (isAdmin) {
@@ -72,16 +78,15 @@ export default function AuthPage({ onLoginSuccess }) {
       localStorage.setItem('larks_user', JSON.stringify(adminUser));
 
       setLoggedInUser(adminUser);
-      setShowAdminSuccessPopup(true); // SHOW ADMIN UNLOCKED POPUP
+      setShowAdminSuccessPopup(true);
 
       setTimeout(() => {
         onLoginSuccess(adminUser);
-        navigate('/admin', { replace: true }); // DIRECT REDIRECT TO ADMIN DASHBOARD
+        navigate('/admin', { replace: true });
       }, 1000);
       return;
     }
 
-    // REGULAR CUSTOMER LOGIN (Direct Redirect to /)
     try {
       const res = await fetch(`${LIVE_BACKEND_URL}/api/auth/user/login`, {
         method: 'POST',
@@ -94,11 +99,10 @@ export default function AuthPage({ onLoginSuccess }) {
         localStorage.setItem('larks_user', JSON.stringify(data.user));
         
         setLoggedInUser(data.user);
-        setShowUserSuccessPopup(true); // SHOW USER SUCCESS POPUP
+        setShowUserSuccessPopup(true);
 
         setTimeout(() => {
-          onLoginSuccess(data.user);
-          navigate('/'); // DIRECT REDIRECT TO HOME STOREFRONT
+          redirectAfterAuth(data.user);
         }, 1000);
       } else {
         setErrorMsg(data.message || 'Invalid email or password.');
@@ -114,7 +118,6 @@ export default function AuthPage({ onLoginSuccess }) {
     <div className="min-h-screen bg-[#faf6f5] flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-2xl border border-[#b57c70]/20 shadow-xl overflow-hidden relative">
         
-        {/* Header */}
         <div className="bg-[#2b2524] text-[#faf6f5] p-8 text-center relative">
           <div className="w-12 h-12 bg-[#b57c70] text-white rounded-full flex items-center justify-center mx-auto mb-3 shadow">
             <Sparkles className="w-6 h-6" />
@@ -123,7 +126,6 @@ export default function AuthPage({ onLoginSuccess }) {
           <p className="text-xs text-[#faf6f5]/70 mt-1">Artisanal Custom Handcrafted Gift & Jewelry Studio</p>
         </div>
 
-        {/* Mode Tabs */}
         <div className="flex border-b border-[#b57c70]/20 bg-[#faf6f5]">
           <button
             onClick={() => { setAuthMode('user-login'); setErrorMsg(''); }}
@@ -147,7 +149,6 @@ export default function AuthPage({ onLoginSuccess }) {
           {errorMsg && <div className="p-3 bg-rose-50 text-rose-700 text-xs rounded border border-rose-200">{errorMsg}</div>}
           {successMsg && <div className="p-3 bg-emerald-50 text-emerald-700 text-xs rounded border border-emerald-200">{successMsg}</div>}
 
-          {/* UNIFIED LOGIN FORM */}
           {authMode === 'user-login' && (
             <form onSubmit={handleUserLogin} className="space-y-4 text-xs">
               <div>
@@ -191,7 +192,6 @@ export default function AuthPage({ onLoginSuccess }) {
             </form>
           )}
 
-          {/* USER REGISTER FORM */}
           {authMode === 'user-register' && (
             <form onSubmit={handleUserRegister} className="space-y-4 text-xs">
               <div>
@@ -253,7 +253,6 @@ export default function AuthPage({ onLoginSuccess }) {
 
       </div>
 
-      {/* CUSTOMER SUCCESS POPUP */}
       {showUserSuccessPopup && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-[#b57c70]/30 animate-in fade-in zoom-in">
@@ -263,7 +262,7 @@ export default function AuthPage({ onLoginSuccess }) {
 
             <h3 className="font-serif text-xl font-bold text-[#2b2524]">Successfully Signed In!</h3>
             <p className="text-xs text-[#2b2524]/80 leading-relaxed font-medium">
-              Welcome back, <strong className="text-[#b57c70]">{loggedInUser?.name}</strong>! Redirecting you to the storefront...
+              Welcome back, <strong className="text-[#b57c70]">{loggedInUser?.name}</strong>! Continuing your order...
             </p>
 
             <div className="pt-2">
@@ -273,7 +272,6 @@ export default function AuthPage({ onLoginSuccess }) {
         </div>
       )}
 
-      {/* ADMIN UNLOCKED POPUP */}
       {showAdminSuccessPopup && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-[#b57c70]/30 animate-in fade-in zoom-in">

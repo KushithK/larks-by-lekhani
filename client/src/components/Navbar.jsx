@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Sparkles, LogOut, Info, ShoppingBag, LayoutDashboard, UserCheck, HelpCircle, Star, Mail, Package, LogIn } from 'lucide-react';
+import { Sparkles, LogOut, Info, ShoppingBag, LayoutDashboard, UserCheck, HelpCircle, Mail, Package, LogIn } from 'lucide-react';
 
 export default function Navbar({ currentUser, onLogout }) {
   const location = useLocation();
@@ -28,7 +28,6 @@ export default function Navbar({ currentUser, onLogout }) {
         {/* Navigation Links */}
         <nav className="flex items-center gap-5 text-xs font-semibold">
           
-          {/* COLLECTIONS LINK (SHOWS FOR EVERYONE, INCLUDING ADMIN) */}
           <Link
             to="/"
             className={`flex items-center gap-1 transition-colors ${
@@ -38,7 +37,7 @@ export default function Navbar({ currentUser, onLogout }) {
             <ShoppingBag className="w-3.5 h-3.5" /> Collections
           </Link>
 
-          {/* CUSTOMER LINKS: COMPLETELY REMOVED FOR ADMIN */}
+          {/* CUSTOMER LINKS: HIDDEN FOR ADMIN */}
           {!isAdmin && (
             <>
               {currentUser && (
@@ -62,15 +61,6 @@ export default function Navbar({ currentUser, onLogout }) {
               </Link>
 
               <Link
-                to="/reviews"
-                className={`flex items-center gap-1 transition-colors ${
-                  location.pathname === '/reviews' ? 'text-[#b57c70] font-bold border-b-2 border-[#b57c70] pb-0.5' : 'text-[#2b2524] hover:text-[#b57c70]'
-                }`}
-              >
-                <Star className="w-3.5 h-3.5 text-amber-500" /> Reviews
-              </Link>
-
-              <Link
                 to="/faqs"
                 className={`flex items-center gap-1 transition-colors ${
                   location.pathname === '/faqs' ? 'text-[#b57c70] font-bold border-b-2 border-[#b57c70] pb-0.5' : 'text-[#2b2524] hover:text-[#b57c70]'
@@ -90,7 +80,7 @@ export default function Navbar({ currentUser, onLogout }) {
             </>
           )}
 
-          {/* ADMIN PORTAL BUTTON (SHOWN ONLY FOR ADMIN) */}
+          {/* ADMIN PORTAL LINK */}
           {isAdmin && (
             <Link
               to="/admin"
@@ -102,7 +92,7 @@ export default function Navbar({ currentUser, onLogout }) {
             </Link>
           )}
 
-          {/* USER / ADMIN STATUS BADGE & LOGOUT */}
+          {/* USER / ADMIN BADGE */}
           {currentUser ? (
             <div className="flex items-center gap-3 pl-3 border-l border-[#b57c70]/20">
               <span className="flex items-center gap-1 text-[#2b2524]/80 bg-[#f5ebe8] px-2.5 py-1 rounded">

@@ -8,7 +8,6 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import AboutUsPage from './pages/AboutUsPage';
 import ContactPage from './pages/ContactPage';
 import FaqPage from './pages/FaqPage';
-import ReviewsPage from './pages/ReviewsPage';
 import MyOrdersPage from './pages/MyOrdersPage';
 import AdminDashboard from './pages/AdminDashboard';
 
@@ -43,18 +42,13 @@ export default function App() {
           <Navbar currentUser={currentUser} onLogout={handleLogout} />
           <Routes>
             <Route path="/" element={<UserCatalog />} />
-            
-            {/* SINGLE UNIFIED LOGIN PAGE */}
             <Route path="/login" element={<AuthPage onLoginSuccess={handleLoginSuccess} />} />
-            
-            <Route path="/product/:id" element={<ProductDetailPage />} />
+            <Route path="/product/:id" element={<ProductDetailPage currentUser={currentUser} />} />
             <Route path="/my-orders" element={<MyOrdersPage currentUser={currentUser} />} />
             <Route path="/about" element={<AboutUsPage />} />
             <Route path="/contact" element={<ContactPage />} />
             <Route path="/faqs" element={<FaqPage />} />
-            <Route path="/reviews" element={<ReviewsPage />} />
             
-            {/* PROTECTED ADMIN DASHBOARD (Accessible only after admin login) */}
             <Route
               path="/admin"
               element={
