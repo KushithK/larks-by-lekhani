@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, Clock, Truck, CheckCircle2, MapPin, Link as LinkIcon, Sparkles, RefreshCw, Type, Image as ImageIcon, Star, X, Lock } from 'lucide-react';
+import { Package, Clock, Truck, CheckCircle2, MapPin, Link as LinkIcon, Sparkles, RefreshCw, Type, Image as ImageIcon, Star, X } from 'lucide-react';
 
 const LIVE_BACKEND_URL = "https://larks-by-lekhani.onrender.com";
 
@@ -96,7 +96,7 @@ export default function MyOrdersPage({ currentUser }) {
               My Orders & Live Progress
             </h1>
             <p className="text-xs text-[#2b2524]/70 mt-1">
-              Track your custom handcrafted requests and leave verified reviews once delivered.
+              Track your custom handcrafted requests created by Lekhani & studio team.
             </p>
           </div>
 
@@ -160,8 +160,8 @@ export default function MyOrdersPage({ currentUser }) {
                         </span>
                       </div>
 
-                      {/* VERIFIED REVIEW BUTTON (LOCKED UNTIL DELIVERED) */}
-                      {isCompleted ? (
+                      {/* VERIFIED REVIEW BUTTON (SHOWN ONLY WHEN ORDER STATUS IS 'COMPLETED') */}
+                      {isCompleted && (
                         <button
                           onClick={() => setSelectedOrderForReview(order)}
                           className="px-3.5 py-2 bg-[#b57c70] hover:bg-[#9e675b] text-white text-xs font-bold rounded-md shadow transition-all flex items-center gap-1.5"
@@ -169,10 +169,6 @@ export default function MyOrdersPage({ currentUser }) {
                           <Star className="w-3.5 h-3.5 fill-current" />
                           <span>Write Review</span>
                         </button>
-                      ) : (
-                        <span className="text-[10px] text-[#2b2524]/60 bg-[#faf6f5] px-2.5 py-1 rounded border border-[#2b2524]/10 font-semibold flex items-center gap-1">
-                          <Lock className="w-3 h-3 text-[#b57c70]" /> Review unlocks after delivery
-                        </span>
                       )}
                     </div>
                   </div>
